@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keystone · Commercial Liability</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=Crimson+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --display:'Chakra Petch',sans-serif;--body:'Manrope',sans-serif;--mono:'IBM Plex Mono',monospace;
+  --bg:#f8f6f1;--bg2:#f0ede6;--bg3:#e8e4dc;--card:#ffffff;
+  --b1:#e2ddd4;--b2:#d4cfc4;--b3:#c5bfb3;
+  --t1:#1a1816;--t2:#4a4640;--t3:#8a857a;--t4:#b5b0a4;
+  --ac:#7c3aed;--ac2:#6d28d9;--ac-s:rgba(124,58,237,0.06);--ac-b:rgba(124,58,237,0.16);
+  --red:#dc2626;--amber:#f59e0b;--green:#16a34a;
+  --topbar:#1e1b2e;--topbar-b:rgba(255,255,255,0.1);
+  --r:6px;
+  --fs-brand:14px;--fs-title:14px;--fs-body:13px;--fs-label:12px;--fs-meta:11px;--fs-micro:10px;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--body);background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased}
+button,input{font-family:var(--body)}button{cursor:pointer}
+::selection{background:var(--ac);color:#fff}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--b3);border-radius:4px}::-webkit-scrollbar-track{background:transparent}
+.shell{display:flex;flex-direction:column;height:100vh}
+.shell *{transition:color .4s,background-color .4s,border-color .4s,box-shadow .4s}
+.shell.switching .app-wrap{opacity:0;transition:opacity .2s}
+.shell:not(.switching) .app-wrap{opacity:1;transition:opacity .3s .12s}
+
+/* TOPBAR */
+.topbar{height:44px;background:var(--topbar);display:flex;align-items:center;padding:0 16px;flex-shrink:0}
+.brand{display:flex;align-items:center;gap:8px;padding-right:14px;border-right:1px solid var(--topbar-b);margin-right:10px}
+.brand-icon{width:20px;height:20px;border-radius:4px;background:var(--ac);display:flex;align-items:center;justify-content:center}
+.brand-icon svg{width:12px;height:12px;color:#fff}
+.brand-name{font-family:var(--display);font-size:var(--fs-brand);font-weight:700;color:#fff;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.topbar-r{display:flex;align-items:center;gap:4px;margin-left:auto}
+.tb{padding:4px 9px;font-size:var(--fs-micro);font-weight:500;border:1px solid var(--topbar-b);border-radius:var(--r);background:transparent;color:rgba(255,255,255,.4);display:flex;align-items:center;gap:5px;transition:all .15s}
+.tb:hover{background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)}
+.tb svg{width:12px;height:12px}
+.tb .dot{width:5px;height:5px;border-radius:50%;background:var(--green)}.tb .dot.off{background:var(--red)}
+.skin-sel{position:relative}
+.skin-dd{display:none;position:absolute;top:32px;right:0;background:var(--card);border:1px solid var(--b1);border-radius:var(--r);padding:4px;min-width:180px;z-index:60;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.skin-dd.open{display:block}
+.skin-opt{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:var(--body);transition:background .08s}
+.skin-opt:hover{background:var(--bg2)}.skin-opt.active{background:var(--ac-s)}
+.skin-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.skin-name{font-size:var(--fs-label);font-weight:500;color:var(--t1)}.skin-opt.active .skin-name{font-weight:600;color:var(--ac)}
+.avatar{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:var(--fs-micro);font-weight:600;color:#fff;margin-left:4px}
+.accent-bar{height:2px;background:linear-gradient(90deg,transparent 0%,var(--ac) 30%,var(--ac2) 70%,transparent 100%);flex-shrink:0;opacity:.4}
+
+/* CONNECT SCREEN */
+.connect-screen{flex:1;display:flex;align-items:center;justify-content:center;padding:20px}
+.connect-card{background:var(--card);border:1px solid var(--b1);border-radius:8px;padding:32px;width:380px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.06)}
+.connect-card h2{font-family:var(--display);font-size:18px;font-weight:700;margin-bottom:4px;letter-spacing:.02em}
+.connect-card p{font-size:var(--fs-label);color:var(--t3);margin-bottom:16px}
+.connect-input{width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--b1);border-radius:var(--r);font-size:var(--fs-label);color:var(--t1);outline:none;font-family:var(--mono);margin-bottom:8px}
+.connect-input:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--ac-s)}
+.connect-input::placeholder{color:var(--t4)}
+.connect-btn{width:100%;padding:10px;background:var(--ac);color:#fff;border:none;border-radius:var(--r);font-size:var(--fs-label);font-weight:600;transition:all .15s}
+.connect-btn:hover{background:var(--ac2)}
+.connect-btn:disabled{background:var(--bg3);color:var(--t4);cursor:not-allowed}
+.connect-error{font-size:var(--fs-meta);color:var(--red);margin-top:8px;min-height:16px}
+.connect-user{font-size:var(--fs-meta);color:var(--green);margin-top:8px}
+
+/* APP */
+.app-wrap{flex:1;display:none;flex-direction:column;min-height:0;overflow:hidden}
+.app-wrap.active{display:flex}
+
+/* DOC STRIP */
+.doc-strip{display:flex;gap:6px;padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--b1);flex-shrink:0}
+.doc-card{flex:1;min-width:0;background:var(--card);border:1.5px dashed var(--b2);border-radius:var(--r);padding:9px 11px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:9px;position:relative;overflow:hidden}
+.doc-card:hover{border-color:var(--ac);background:var(--ac-s)}
+.doc-card.loaded{border-style:solid;border-color:var(--b1);cursor:default}
+.doc-card.loaded:hover{border-color:var(--b2);background:var(--card)}
+.doc-card.anchor.loaded{border-color:var(--ac);border-left:3px solid var(--ac)}
+.doc-card.uploading{border-color:var(--ac);border-style:solid;opacity:.7}
+.doc-card.dragover{border-color:var(--ac);background:var(--ac-s);border-style:solid}
+.dc-icon{width:30px;height:30px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dc-icon svg{width:15px;height:15px}
+.dc-icon.empty{background:var(--bg3);color:var(--t4)}
+.dc-icon.expiring{background:var(--ac-s);color:var(--ac)}
+.dc-icon.renewal{background:rgba(22,163,74,0.08);color:var(--green)}
+.dc-icon.competitor{background:rgba(245,158,11,0.08);color:var(--amber)}
+.dc-icon.guidelines{background:rgba(67,56,202,0.08);color:#4338ca}
+.dc-info{flex:1;min-width:0}
+.dc-label{font-size:var(--fs-micro);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t4);margin-bottom:1px}
+.dc-name{font-size:var(--fs-label);font-weight:500;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dc-name.empty{color:var(--t4);font-weight:400;font-style:italic}
+.dc-meta{font-size:var(--fs-micro);color:var(--t4)}
+.dc-close{width:18px;height:18px;display:none;align-items:center;justify-content:center;border:none;background:transparent;border-radius:3px;color:var(--t4);font-size:var(--fs-label);flex-shrink:0}
+.doc-card.loaded:hover .dc-close{display:flex}.dc-close:hover{background:var(--bg3);color:var(--red)}
+input[type="file"].hidden-input{display:none}
+
+/* RUN BAR */
+.run-bar{display:flex;align-items:center;padding:6px 16px;background:var(--card);border-bottom:1px solid var(--b1);flex-shrink:0;gap:8px}
+.run-status{font-size:var(--fs-meta);color:var(--t3);flex:1}.run-status .ct{font-weight:600;color:var(--t2)}
+.sa{padding:4px 10px;font-size:var(--fs-micro);font-weight:500;border:1px solid var(--b1);border-radius:var(--r);background:var(--card);color:var(--t3);display:flex;align-items:center;gap:4px;transition:all .1s;font-family:var(--body)}
+.sa:hover{border-color:var(--b2);background:var(--bg2);color:var(--t2)}.sa svg{width:12px;height:12px}
+.sa:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+.run-btn{padding:6px 20px;font-size:var(--fs-label);font-weight:600;border:none;border-radius:var(--r);font-family:var(--body);transition:all .15s;display:flex;align-items:center;gap:6px}
+.run-btn.off{background:var(--bg3);color:var(--t4);cursor:not-allowed}
+.run-btn.on{background:var(--ac);color:#fff;cursor:pointer;box-shadow:0 1px 8px var(--ac-b)}
+.run-btn.on:hover{background:var(--ac2);transform:translateY(-1px)}.run-btn.on:active{transform:translateY(0)}
+.run-btn.running{background:var(--ac);color:#fff;cursor:wait;opacity:.7}
+.run-btn svg{width:14px;height:14px}
+
+/* ANALYSIS */
+.analysis{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--card);overflow:hidden}
+.atabs{display:flex;border-bottom:1px solid var(--b1);flex-shrink:0;padding:0 16px}
+.atab{padding:8px 14px;font-size:var(--fs-label);font-weight:500;color:var(--t4);border:none;background:none;border-bottom:2px solid transparent;transition:all .12s;font-family:var(--body);cursor:pointer}
+.atab:hover:not(.disabled){color:var(--t2);background:var(--bg2)}.atab.active{color:var(--ac);border-bottom-color:var(--ac);font-weight:600}
+.atab .adot{display:inline-block;width:5px;height:5px;border-radius:50%;margin-right:5px}
+.atab.disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
+.ascroll{flex:1;overflow-y:auto;padding:16px 24px 32px}
+
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:6px;color:var(--t4)}
+.empty svg{width:28px;height:28px;color:var(--b3);margin-bottom:4px}
+
+/* ANALYSIS CONTENT */
+.ax{display:none}.ax.visible{display:block}
+.ax-label{font-family:var(--mono);font-size:var(--fs-micro);color:var(--t4);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
+.ax-bl{font-size:var(--fs-body);line-height:1.65;color:var(--t1);padding:12px 16px;background:var(--ac-s);border-left:3px solid var(--ac);border-radius:0 var(--r) var(--r) 0;margin-bottom:20px}
+.ax-bl strong{color:var(--ac)}
+.ax-sec{margin-bottom:20px}
+.ax-sh{font-family:var(--display);font-size:var(--fs-label);font-weight:700;letter-spacing:.02em;margin-bottom:10px;color:var(--t1)}
+.ax-sc{font-weight:400;color:var(--t4);font-family:var(--body);font-size:var(--fs-meta);margin-left:4px}
+.mc{border:1px solid var(--b1);border-radius:var(--r);margin-bottom:6px;overflow:hidden;transition:border-color .15s}
+.mc:hover{border-color:var(--b2)}
+.mc-in{padding:10px 14px}
+.mc.critical{border-left:3px solid var(--red)}.mc.critical .mc-in{padding-left:11px}
+.mc-top{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.mc-name{font-size:var(--fs-label);font-weight:600;color:var(--t1);flex:1}
+.mc.critical .mc-name{font-size:var(--fs-body)}
+.badge{font-size:var(--fs-micro);font-weight:600;padding:2px 7px;border-radius:3px;white-space:nowrap}
+.badge.us{background:rgba(220,38,38,0.1);color:var(--red)}.badge.ds{background:rgba(22,163,74,0.1);color:var(--green)}.badge.uf{background:rgba(245,158,11,0.1);color:var(--amber)}.badge.n{background:var(--bg3);color:var(--t3)}
+.mr{display:flex;gap:6px;font-size:var(--fs-meta);line-height:1.55;margin-bottom:2px}
+.mr-l{color:var(--t4);flex-shrink:0;min-width:70px;font-weight:500}.mr-v{color:var(--t2)}
+.mc.critical .mr-v{color:var(--t1)}
+.cx{border-radius:var(--r);padding:8px 12px;margin-bottom:4px;display:flex;gap:10px;align-items:flex-start;font-size:var(--fs-label);line-height:1.45}
+.cx-i{flex-shrink:0;font-weight:700;font-size:var(--fs-body)}
+.cx.pass{background:var(--bg)}.cx.pass .cx-i{color:var(--green)}.cx.pass .cx-t{color:var(--t3)}
+.cx.fail{background:rgba(220,38,38,0.05);border:1px solid rgba(220,38,38,0.15)}.cx.fail .cx-i{color:var(--red)}.cx.fail .cx-t{color:var(--t1)}.cx.fail strong{color:var(--red)}
+.cx.warn{background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.12)}.cx.warn .cx-i{color:var(--amber)}.cx.warn .cx-t{color:var(--t2)}.cx.warn strong{color:var(--amber)}
+.ax-risk{font-size:var(--fs-body);line-height:1.7;color:var(--t2);padding:12px 16px;background:var(--bg);border-radius:var(--r);border:1px solid var(--b1)}
+.ax-raw{font-family:var(--mono);font-size:var(--fs-meta);line-height:1.7;color:var(--t2);white-space:pre-wrap;padding:12px 16px;background:var(--bg);border:1px solid var(--b1);border-radius:var(--r)}
+.ax-edit{width:100%;min-height:200px;font-family:var(--mono);font-size:var(--fs-meta);line-height:1.7;color:var(--t1);padding:12px 16px;background:var(--bg);border:1px solid var(--b1);border-radius:var(--r);resize:vertical;outline:none}
+.ax-edit:focus{border-color:var(--ac)}
+
+/* STEP INDICATOR */
+.steps{height:36px;background:var(--card);border-top:1px solid var(--b1);display:flex;align-items:center;justify-content:center;gap:0;flex-shrink:0;padding:0 16px}
+.step{display:flex;align-items:center;gap:6px;padding:0 16px;position:relative}
+.step+.step::before{content:'';position:absolute;left:-12px;width:24px;height:1px;background:var(--b2)}
+.step-dot{width:8px;height:8px;border-radius:50%;background:var(--b2);transition:all .3s;flex-shrink:0}
+.step.done .step-dot{background:var(--green)}
+.step.active .step-dot{background:var(--ac);box-shadow:0 0 8px var(--ac-b);animation:pulse 1.5s infinite}
+.step-label{font-size:var(--fs-micro);font-weight:500;color:var(--t4);transition:color .3s}
+.step.done .step-label{color:var(--t3)}.step.active .step-label{color:var(--ac);font-weight:600}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* STATUSBAR */
+.sbar{height:22px;background:var(--bg2);border-top:1px solid var(--b1);display:flex;align-items:center;padding:0 16px;flex-shrink:0;gap:10px}
+.sb{font-size:var(--fs-micro);color:var(--t4);display:flex;align-items:center;gap:3px}
+.sb-d{width:4px;height:4px;border-radius:50%}.sb-d.on{background:var(--green)}.sb-d.off{background:var(--t4)}
+
+/* SAVE MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+.modal-bg.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--b1);border-radius:8px;width:420px;max-height:70vh;display:flex;flex-direction:column;box-shadow:0 8px 30px rgba(0,0,0,.12)}
+.modal-head{padding:14px 20px;border-bottom:1px solid var(--b1);display:flex;justify-content:space-between;align-items:center}
+.modal-head h3{font-family:var(--display);font-size:var(--fs-title);font-weight:700;letter-spacing:.02em}
+.modal-close{background:none;border:none;font-size:var(--fs-title);color:var(--t3);padding:0}.modal-close:hover{color:var(--t1)}
+.modal-body{padding:16px 20px;flex:1;overflow-y:auto}
+.modal-foot{padding:12px 20px;border-top:1px solid var(--b1);display:flex;gap:8px;justify-content:flex-end}
+.modal-opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--b1);border-radius:var(--r);cursor:pointer;transition:all .12s;margin-bottom:6px}
+.modal-opt:hover{border-color:var(--ac);background:var(--ac-s)}
+.modal-opt.selected{border-color:var(--ac);background:var(--ac-s);box-shadow:0 0 0 1.5px var(--ac)}
+.modal-opt-icon{width:28px;height:28px;border-radius:5px;background:var(--bg2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.modal-opt-icon svg{width:14px;height:14px;color:var(--t3)}
+.modal-opt-info{flex:1}.modal-opt-title{font-size:var(--fs-label);font-weight:600;color:var(--t1)}.modal-opt-desc{font-size:var(--fs-micro);color:var(--t3)}
+.mbtn{padding:7px 16px;font-size:var(--fs-label);font-weight:600;border:none;border-radius:var(--r);cursor:pointer;font-family:var(--body);transition:all .12s}
+.mbtn.ghost{background:var(--bg);color:var(--t3);border:1px solid var(--b1)}.mbtn.ghost:hover{background:var(--bg2);color:var(--t2)}
+.mbtn.primary{background:var(--ac);color:#fff}.mbtn.primary:hover{background:var(--ac2)}
+</style>
+</head>
+<body>
+<div class="shell" id="shell">
+<div class="topbar">
+  <div class="brand"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-3-3v6m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></div><div class="brand-name" id="brand-name">Keystone · Commercial Liability</div></div>
+  <div class="topbar-r">
+    <button class="tb" id="box-btn" onclick="disconnect()"><span class="dot off" id="box-dot"></span><span id="box-label">Not connected</span></button>
+    <div class="skin-sel"><button class="tb" onclick="toggleSkinDD()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button><div class="skin-dd" id="skin-dd"></div></div>
+    <div class="avatar" id="avatar">—</div>
+  </div>
+</div>
+<div class="accent-bar"></div>
+
+<!-- CONNECT -->
+<div class="connect-screen" id="connect-screen">
+  <div class="connect-card">
+    <h2>Connect to Box</h2>
+    <p>Enter your Box developer token to get started</p>
+    <input class="connect-input" id="token-input" type="text" placeholder="Paste developer token..." spellcheck="false">
+    <button class="connect-btn" id="connect-btn" onclick="connect()">Connect</button>
+    <div class="connect-error" id="connect-err"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app-wrap" id="app-wrap">
+  <div class="doc-strip" id="doc-strip"></div>
+  <div class="run-bar">
+    <div class="run-status" id="run-status"></div>
+    <button class="sa" id="save-btn" disabled onclick="openSaveModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>Save</button>
+    <button class="sa" id="export-btn" disabled onclick="exportAnalysis()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export</button>
+    <button class="run-btn off" id="run-btn" onclick="runAnalysis()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>Analyze</button>
+  </div>
+  <div class="analysis">
+    <div class="atabs" id="atabs">
+      <button class="atab active disabled" onclick="switchTab(0)"><span class="adot" style="background:var(--green)"></span>vs Renewal</button>
+      <button class="atab disabled" onclick="switchTab(1)"><span class="adot" style="background:var(--amber)"></span>vs Competitor</button>
+    </div>
+    <div class="ascroll" id="ascroll">
+      <div class="empty" id="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>
+        <div style="font-size:var(--fs-body);font-weight:500">No analysis yet</div>
+        <div style="font-size:var(--fs-meta)">Upload documents and click Analyze</div>
+      </div>
+      <div class="ax" id="ax-0"></div>
+      <div class="ax" id="ax-1"></div>
+    </div>
+  </div>
+</div>
+
+<!-- STEP INDICATOR -->
+<div class="steps" id="steps">
+  <div class="step" id="step-0"><div class="step-dot"></div><div class="step-label">Upload</div></div>
+  <div class="step" id="step-1"><div class="step-dot"></div><div class="step-label">Extract</div></div>
+  <div class="step" id="step-2"><div class="step-dot"></div><div class="step-label">Analyze</div></div>
+  <div class="step" id="step-3"><div class="step-dot"></div><div class="step-label">Save</div></div>
+</div>
+
+<div class="sbar">
+  <span class="sb"><span class="sb-d off" id="sb-d"></span><span id="sb-box">Disconnected</span></span>
+  <span class="sb" id="sb-user"></span>
+  <span class="sb" id="sb-docs">0 documents</span>
+  <span class="sb" style="margin-left:auto">v0.1</span>
+</div>
+</div>
+
+<!-- SAVE MODAL -->
+<div class="modal-bg" id="save-modal" onclick="if(event.target===this)closeSaveModal()">
+  <div class="modal">
+    <div class="modal-head"><h3>Save Analysis</h3><button class="modal-close" onclick="closeSaveModal()">×</button></div>
+    <div class="modal-body">
+      <div class="modal-opt selected" onclick="selectSaveMode('raw')">
+        <div class="modal-opt-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+        <div class="modal-opt-info"><div class="modal-opt-title">Save raw to Box</div><div class="modal-opt-desc">Markdown analysis saved to the renewal folder</div></div>
+      </div>
+      <div class="modal-opt" onclick="selectSaveMode('edit')">
+        <div class="modal-opt-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+        <div class="modal-opt-info"><div class="modal-opt-title">Edit before saving</div><div class="modal-opt-desc">Review and modify the analysis, then save</div></div>
+      </div>
+      <div class="modal-opt" onclick="selectSaveMode('formatted')">
+        <div class="modal-opt-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg></div>
+        <div class="modal-opt-info"><div class="modal-opt-title">Formatted deliverable</div><div class="modal-opt-desc">HTML report formatted for sharing</div></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="mbtn ghost" onclick="closeSaveModal()">Cancel</button>
+      <button class="mbtn primary" onclick="executeSave()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// BOX API CLIENT
+// ═══════════════════════════════════════
+const BOX = 'https://api.box.com/2.0';
+const BOX_UP = 'https://upload.box.com/api/2.0';
+let token = null;
+
+async function boxGet(path) {
+  const r = await fetch(BOX + path, { headers: { 'Authorization': 'Bearer ' + token } });
+  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+  return r.json();
+}
+async function boxPost(path, body, headers = {}) {
+  const r = await fetch(BOX + path, {
+    method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+  return r.json();
+}
+async function boxPut(path, body) {
+  const r = await fetch(BOX + path, {
+    method: 'PUT', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+  return r.json();
+}
+async function boxUpload(folderId, file) {
+  const form = new FormData();
+  form.append('attributes', JSON.stringify({ name: file.name, parent: { id: folderId } }));
+  form.append('file', file);
+  const r = await fetch(BOX_UP + '/files/content', {
+    method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: form
+  });
+  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+  return r.json();
+}
+async function boxAiExtract(fileId) {
+  return boxPost('/ai/extract_structured', {
+    items: [{ id: fileId, type: 'file' }],
+    fields: [
+      { key: 'insured_name', type: 'string', description: 'Full name of the insured party or policyholder' },
+      { key: 'carrier', type: 'string', description: 'Name of the insurance carrier or company issuing the policy' },
+      { key: 'policy_type', type: 'string', description: 'Type of policy (e.g., CGL, D&O, E&O, Property, Professional Liability)' },
+      { key: 'effective_date', type: 'string', description: 'Policy effective/start date' },
+      { key: 'expiration_date', type: 'string', description: 'Policy expiration/end date' },
+      { key: 'policy_number', type: 'string', description: 'The policy number or identifier' }
+    ]
+  });
+}
+async function boxAiAsk(fileIds, prompt) {
+  return boxPost('/ai/ask', {
+    mode: fileIds.length === 1 ? 'single_item_qa' : 'multiple_item_qa',
+    prompt: prompt,
+    items: fileIds.map(id => ({ id, type: 'file' })),
+    ai_agent: {
+      type: 'ai_agent_ask',
+      long_text: {
+        system_message: SYSTEM_MSG
+      },
+      basic_text: {
+        system_message: SYSTEM_MSG
+      }
+    }
+  });
+}
+async function findOrCreateFolder(parentId, name) {
+  const items = await boxGet(`/folders/${parentId}/items?fields=name,type&limit=200`);
+  const existing = items.entries.find(e => e.type === 'folder' && e.name === name);
+  if (existing) return existing;
+  return boxPost('/folders', { name, parent: { id: parentId } });
+}
+
+const SYSTEM_MSG = `You are an insurance policy renewal analyst. Your job: compare an expiring policy against a renewal or competitor, identify material changes, assess risk impact, and check compliance against underwriting guidelines.
+
+Methodology:
+1. Read endorsements first (they override everything), then declarations, insuring agreement, exclusions, conditions, definitions.
+2. For each difference, test materiality: does it alter WHO is covered, WHAT is covered, HOW MUCH, WHEN, WHERE, or HOW claims are handled? If not, ignore it.
+3. Map interactions between changes. Changes compound — assess net effect, not individual changes.
+4. Rate each material change for severity and frequency impact.
+5. Check each guideline requirement against specific policy language. Absence is non-compliance.
+
+Output JSON only. No markdown, no explanation outside the JSON. Use this exact structure:
+{
+  "label": "short header like 'Renewal Analysis · Insured · Policy Type · Date'",
+  "bottom_line": "2-3 sentences. Net assessment.",
+  "material_changes": [
+    {
+      "name": "short name",
+      "severity": "up_severity|down_severity|up_frequency|down_frequency|neutral",
+      "changed": "what changed, one sentence",
+      "impact": "business impact, one sentence",
+      "reference": "policy section or endorsement",
+      "interaction": "how it compounds with other changes, or 'None'"
+    }
+  ],
+  "compliance": [
+    { "status": "pass|fail|warn", "text": "description" }
+  ],
+  "risk_assessment": "one paragraph synthesis"
+}`;
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let user = null;
+let rootFolderId = null;
+const SLOTS = [
+  { key: 'expiring', label: 'Expiring', ic: 'expiring' },
+  { key: 'renewal', label: 'Renewal', ic: 'renewal' },
+  { key: 'competitor', label: 'Competitor', ic: 'competitor' },
+  { key: 'guidelines', label: 'Guidelines', ic: 'guidelines' }
+];
+let docs = {}; // { key: { file, boxFile, extracted } }
+let analyses = [null, null]; // [renewal, competitor]
+let rawAnalyses = ['', ''];
+let activeTab = 0;
+let pipelineStep = -1; // -1=idle, 0=upload, 1=extract, 2=analyze, 3=save
+let saveMode = 'raw';
+
+// ═══════════════════════════════════════
+// SKINS
+// ═══════════════════════════════════════
+const SKINS = [
+  { name: 'Keystone', brand: 'Keystone · Commercial Liability', dot: '#7c3aed', v: { '--display': "'Chakra Petch',sans-serif", '--body': "'Manrope',sans-serif", '--bg': '#f8f6f1', '--bg2': '#f0ede6', '--bg3': '#e8e4dc', '--card': '#ffffff', '--b1': '#e2ddd4', '--b2': '#d4cfc4', '--b3': '#c5bfb3', '--t1': '#1a1816', '--t2': '#4a4640', '--t3': '#8a857a', '--t4': '#b5b0a4', '--ac': '#7c3aed', '--ac2': '#6d28d9', '--ac-s': 'rgba(124,58,237,0.06)', '--ac-b': 'rgba(124,58,237,0.16)', '--topbar': '#1e1b2e' } },
+  { name: 'Meridian', brand: 'Meridian · Property', dot: '#0d9488', v: { '--display': "'Space Grotesk',sans-serif", '--body': "'DM Sans',sans-serif", '--bg': '#f4f5f7', '--bg2': '#ebedf0', '--bg3': '#dde0e4', '--card': '#ffffff', '--b1': '#dde0e4', '--b2': '#cdd1d6', '--b3': '#b8bcc4', '--t1': '#111827', '--t2': '#374151', '--t3': '#6b7280', '--t4': '#9ca3af', '--ac': '#0d9488', '--ac2': '#0f766e', '--ac-s': 'rgba(13,148,136,0.06)', '--ac-b': 'rgba(13,148,136,0.16)', '--topbar': '#134e4a' } },
+  { name: 'Sentinel', brand: 'Sentinel · Professional Liability', dot: '#f59e0b', v: { '--display': "'Chakra Petch',sans-serif", '--body': "'Outfit',sans-serif", '--bg': '#0f0f12', '--bg2': '#18181b', '--bg3': '#27272a', '--card': '#1c1c20', '--b1': '#2e2e33', '--b2': '#3f3f46', '--b3': '#52525b', '--t1': '#fafafa', '--t2': '#d4d4d8', '--t3': '#71717a', '--t4': '#52525b', '--ac': '#f59e0b', '--ac2': '#d97706', '--ac-s': 'rgba(245,158,11,0.08)', '--ac-b': 'rgba(245,158,11,0.18)', '--topbar': '#0a0a0c' } },
+  { name: 'Ledger', brand: 'Ledger · D&O', dot: '#4338ca', v: { '--display': "'Crimson Pro',serif", '--body': "'Manrope',sans-serif", '--bg': '#fafaf9', '--bg2': '#f5f5f4', '--bg3': '#e7e5e4', '--card': '#ffffff', '--b1': '#e7e5e4', '--b2': '#d6d3d1', '--b3': '#a8a29e', '--t1': '#1c1917', '--t2': '#44403c', '--t3': '#78716c', '--t4': '#a8a29e', '--ac': '#4338ca', '--ac2': '#3730a3', '--ac-s': 'rgba(67,56,202,0.06)', '--ac-b': 'rgba(67,56,202,0.16)', '--topbar': '#1e1b4b' } }
+];
+let cSkin = 0;
+function applySkin(i) {
+  const sh = document.getElementById('shell'); sh.classList.add('switching');
+  setTimeout(() => { cSkin = i; const s = SKINS[i]; Object.entries(s.v).forEach(([k, v]) => document.documentElement.style.setProperty(k, v)); document.getElementById('brand-name').textContent = s.brand; document.title = s.brand; renderSkinDD(); sh.classList.remove('switching'); }, 220);
+}
+function toggleSkinDD() { document.getElementById('skin-dd').classList.toggle('open'); renderSkinDD(); }
+function renderSkinDD() { document.getElementById('skin-dd').innerHTML = SKINS.map((s, i) => `<button class="skin-opt ${i === cSkin ? 'active' : ''}" onclick="applySkin(${i});toggleSkinDD()"><span class="skin-dot" style="background:${s.dot}"></span><span class="skin-name">${s.name}</span></button>`).join(''); }
+
+// ═══════════════════════════════════════
+// CONNECTION
+// ═══════════════════════════════════════
+async function connect() {
+  const input = document.getElementById('token-input');
+  const err = document.getElementById('connect-err');
+  const btn = document.getElementById('connect-btn');
+  token = input.value.trim();
+  if (!token) { err.textContent = 'Enter a developer token'; return; }
+  btn.disabled = true; btn.textContent = 'Connecting...'; err.textContent = '';
+  try {
+    user = await boxGet('/users/me');
+    const root = await findOrCreateFolder('0', 'Renewal Analyst');
+    rootFolderId = root.id;
+    const userFolder = await findOrCreateFolder(rootFolderId, user.name);
+    rootFolderId = userFolder.id; // L1 is now the working root
+    document.getElementById('connect-screen').style.display = 'none';
+    document.getElementById('app-wrap').classList.add('active');
+    document.getElementById('box-dot').classList.remove('off');
+    document.getElementById('box-label').textContent = 'Box';
+    document.getElementById('sb-d').classList.add('on'); document.getElementById('sb-d').classList.remove('off');
+    document.getElementById('sb-box').textContent = 'Box';
+    document.getElementById('sb-user').textContent = user.name;
+    document.getElementById('avatar').textContent = user.name.split(' ').map(w => w[0]).join('').slice(0, 2);
+    renderStrip();
+    syncState();
+  } catch (e) {
+    err.textContent = 'Connection failed: ' + e.message;
+    token = null; user = null;
+  }
+  btn.disabled = false; btn.textContent = 'Connect';
+}
+function disconnect() {
+  if (!token) return;
+  token = null; user = null; rootFolderId = null; docs = {}; analyses = [null, null]; rawAnalyses = ['', ''];
+  document.getElementById('connect-screen').style.display = 'flex';
+  document.getElementById('app-wrap').classList.remove('active');
+  document.getElementById('box-dot').classList.add('off');
+  document.getElementById('box-label').textContent = 'Not connected';
+  document.getElementById('sb-d').classList.remove('on'); document.getElementById('sb-d').classList.add('off');
+  document.getElementById('sb-box').textContent = 'Disconnected';
+  document.getElementById('sb-user').textContent = '';
+  setStep(-1);
+}
+
+// ═══════════════════════════════════════
+// DOCUMENT STRIP
+// ═══════════════════════════════════════
+function renderStrip() {
+  document.getElementById('doc-strip').innerHTML = SLOTS.map((s, i) => {
+    const d = docs[s.key]; const ok = !!d; const anc = s.key === 'expiring';
+    return `<div class="doc-card ${ok ? 'loaded' : ''} ${anc ? 'anchor' : ''}" id="dc-${s.key}"
+      onclick="${ok ? '' : `triggerUpload('${s.key}')`}"
+      ondragover="event.preventDefault();this.classList.add('dragover')"
+      ondragleave="this.classList.remove('dragover')"
+      ondrop="event.preventDefault();this.classList.remove('dragover');handleDrop(event,'${s.key}')">
+      <div class="dc-icon ${ok ? s.ic : 'empty'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+      <div class="dc-info">
+        <div class="dc-label">${s.label}</div>
+        <div class="dc-name ${ok ? '' : 'empty'}">${ok ? d.boxFile.entries[0].name : 'Drop or click'}</div>
+        ${ok && d.extracted ? `<div class="dc-meta">${d.extracted.carrier || ''} · ${d.extracted.effective_date || ''}</div>` : ''}
+      </div>
+      ${ok ? `<button class="dc-close" onclick="event.stopPropagation();removeDoc('${s.key}')">×</button>` : ''}
+    </div>`;
+  }).join('');
+  // Hidden file inputs
+  SLOTS.forEach(s => {
+    if (!document.getElementById('fi-' + s.key)) {
+      const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.pdf'; inp.className = 'hidden-input';
+      inp.id = 'fi-' + s.key; inp.onchange = e => handleFile(e.target.files[0], s.key);
+      document.body.appendChild(inp);
+    }
+  });
+}
+function triggerUpload(key) { document.getElementById('fi-' + key).click(); }
+function handleDrop(e, key) { if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0], key); }
+
+async function handleFile(file, key) {
+  if (!file || !token) return;
+  setStep(0);
+  const card = document.getElementById('dc-' + key);
+  card.classList.add('uploading');
+
+  try {
+    // Upload to Box (into user's root for now — we'll refile after extract)
+    const boxFile = await boxUpload(rootFolderId, file);
+    const fileId = boxFile.entries[0].id;
+    docs[key] = { file, boxFile, extracted: null };
+    setStep(1);
+    renderStrip(); syncState();
+
+    // Extract identity
+    try {
+      const ext = await boxAiExtract(fileId);
+      docs[key].extracted = ext;
+      renderStrip();
+
+      // Auto-file: find/create client folder (L2) and cycle folder (L3)
+      if (ext.insured_name) {
+        const clientFolder = await findOrCreateFolder(rootFolderId, ext.insured_name);
+        const cycleName = [ext.effective_date || 'undated', ext.policy_type || 'Policy'].join(' · ');
+        const cycleFolder = await findOrCreateFolder(clientFolder.id, cycleName);
+        // Move file to cycle folder
+        await boxPut(`/files/${fileId}`, { parent: { id: cycleFolder.id } });
+      }
+    } catch (extErr) {
+      console.warn('Extract failed, filing in root:', extErr);
+    }
+    setStep(-1);
+  } catch (err) {
+    console.error('Upload failed:', err);
+    alert('Upload failed: ' + err.message);
+    setStep(-1);
+  }
+  card.classList.remove('uploading');
+  syncState();
+}
+
+function removeDoc(key) { delete docs[key]; renderStrip(); syncState(); }
+
+// ═══════════════════════════════════════
+// STATE SYNC
+// ═══════════════════════════════════════
+function syncState() {
+  const n = Object.keys(docs).length;
+  const canRun = docs.expiring && (docs.renewal || docs.competitor);
+  const hasAnalysis = analyses[0] || analyses[1];
+  document.getElementById('sb-docs').textContent = n + ' document' + (n !== 1 ? 's' : '');
+  document.getElementById('run-btn').className = 'run-btn ' + (canRun ? 'on' : 'off');
+  document.getElementById('save-btn').disabled = !hasAnalysis;
+  document.getElementById('export-btn').disabled = !hasAnalysis;
+
+  const rs = document.getElementById('run-status');
+  if (canRun) { const p = []; if (docs.renewal) p.push('renewal'); if (docs.competitor) p.push('competitor'); rs.innerHTML = `<span class="ct">${n}</span> documents · Ready to analyze ${p.join(' + ')}`; }
+  else if (!n) rs.innerHTML = `<span class="ct">0</span> · Upload expiring + renewal to begin`;
+  else { const m = []; if (!docs.expiring) m.push('expiring'); if (!docs.renewal && !docs.competitor) m.push('renewal or competitor'); rs.innerHTML = `<span class="ct">${n}</span> documents · Need ${m.join(' and ')}`; }
+
+  const tabs = document.querySelectorAll('.atab');
+  tabs[0].classList.toggle('disabled', !docs.renewal);
+  tabs[1].classList.toggle('disabled', !docs.competitor);
+}
+
+// ═══════════════════════════════════════
+// ANALYSIS
+// ═══════════════════════════════════════
+async function runAnalysis() {
+  if (!docs.expiring || (!docs.renewal && !docs.competitor)) return;
+  const btn = document.getElementById('run-btn');
+  btn.className = 'run-btn running'; btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>Analyzing...';
+  setStep(2);
+
+  const expiringId = docs.expiring.boxFile.entries[0].id;
+
+  // Run renewal analysis
+  if (docs.renewal) {
+    try {
+      const renewalId = docs.renewal.boxFile.entries[0].id;
+      const fileIds = [expiringId, renewalId];
+      if (docs.guidelines) fileIds.push(docs.guidelines.boxFile.entries[0].id);
+      const prompt = 'Compare the expiring policy against the renewal policy. ' + (docs.guidelines ? 'Check compliance against the underwriting guidelines document. ' : '') + 'Identify material changes, assess risk impact, and produce the structured JSON analysis.';
+      const result = await boxAiAsk(fileIds, prompt);
+      rawAnalyses[0] = result.answer;
+      try { analyses[0] = JSON.parse(result.answer); } catch { analyses[0] = { raw: result.answer }; }
+    } catch (e) { console.error('Renewal analysis failed:', e); analyses[0] = { error: e.message }; }
+  }
+
+  // Run competitor analysis
+  if (docs.competitor) {
+    try {
+      const compId = docs.competitor.boxFile.entries[0].id;
+      const fileIds = [expiringId, compId];
+      if (docs.guidelines) fileIds.push(docs.guidelines.boxFile.entries[0].id);
+      const prompt = 'Compare the expiring policy against the competitor quote. ' + (docs.guidelines ? 'Check compliance against the underwriting guidelines document. ' : '') + 'Identify material changes, assess risk impact, and produce the structured JSON analysis.';
+      const result = await boxAiAsk(fileIds, prompt);
+      rawAnalyses[1] = result.answer;
+      try { analyses[1] = JSON.parse(result.answer); } catch { analyses[1] = { raw: result.answer }; }
+    } catch (e) { console.error('Competitor analysis failed:', e); analyses[1] = { error: e.message }; }
+  }
+
+  document.getElementById('empty-state').style.display = 'none';
+  renderAnalysis(0); renderAnalysis(1);
+  if (docs.renewal) switchTab(0); else switchTab(1);
+  btn.className = 'run-btn on'; btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>Analyze';
+  setStep(3);
+  syncState();
+}
+
+function renderAnalysis(idx) {
+  const ax = analyses[idx];
+  const el = document.getElementById('ax-' + idx);
+  if (!ax) { el.innerHTML = ''; return; }
+
+  if (ax.error) { el.innerHTML = `<div class="ax-raw">Analysis failed: ${ax.error}</div>`; return; }
+  if (ax.raw) { el.innerHTML = `<div class="ax-label">Raw Response</div><div class="ax-raw">${ax.raw}</div>`; return; }
+
+  const badgeClass = s => ({ up_severity: 'us', down_severity: 'ds', up_frequency: 'uf', down_frequency: 'ds', neutral: 'n' }[s] || 'n');
+  const badgeLabel = s => ({ up_severity: '↑ severity', down_severity: '↓ severity', up_frequency: '↑ frequency', down_frequency: '↓ frequency', neutral: 'neutral' }[s] || s);
+
+  let h = `<div class="ax-label">${ax.label || 'Analysis'}</div>`;
+  h += `<div class="ax-sec"><div class="ax-sh">Bottom Line</div><div class="ax-bl">${ax.bottom_line || ''}</div></div>`;
+
+  if (ax.material_changes?.length) {
+    h += `<div class="ax-sec"><div class="ax-sh">Material Changes<span class="ax-sc">${ax.material_changes.length} identified</span></div>`;
+    ax.material_changes.forEach((mc, i) => {
+      h += `<div class="mc ${i === 0 ? 'critical' : ''}"><div class="mc-in">
+        <div class="mc-top"><div class="mc-name">${mc.name}</div><div class="badge ${badgeClass(mc.severity)}">${badgeLabel(mc.severity)}</div></div>
+        <div class="mr"><span class="mr-l">Changed</span><span class="mr-v">${mc.changed}</span></div>
+        <div class="mr"><span class="mr-l">Impact</span><span class="mr-v">${mc.impact}</span></div>
+        ${mc.reference ? `<div class="mr"><span class="mr-l">Reference</span><span class="mr-v">${mc.reference}</span></div>` : ''}
+        ${mc.interaction && mc.interaction !== 'None' ? `<div class="mr"><span class="mr-l">Interaction</span><span class="mr-v">${mc.interaction}</span></div>` : ''}
+      </div></div>`;
+    });
+    h += `</div>`;
+  }
+
+  if (ax.compliance?.length) {
+    h += `<div class="ax-sec"><div class="ax-sh">Compliance</div>`;
+    // Sort: fail first, then warn, then pass
+    const sorted = [...ax.compliance].sort((a, b) => { const o = { fail: 0, warn: 1, pass: 2 }; return (o[a.status] ?? 1) - (o[b.status] ?? 1); });
+    sorted.forEach(c => {
+      const icon = { pass: '✓', fail: '✗', warn: '⚠' }[c.status] || '•';
+      h += `<div class="cx ${c.status}"><span class="cx-i">${icon}</span><span class="cx-t">${c.text}</span></div>`;
+    });
+    h += `</div>`;
+  }
+
+  if (ax.risk_assessment) {
+    h += `<div class="ax-sec"><div class="ax-sh">Net Risk Assessment</div><div class="ax-risk">${ax.risk_assessment}</div></div>`;
+  }
+  el.innerHTML = h;
+}
+
+function switchTab(i) {
+  const tabs = document.querySelectorAll('.atab');
+  if (tabs[i].classList.contains('disabled')) return;
+  activeTab = i;
+  tabs.forEach((t, j) => t.classList.toggle('active', j === i));
+  document.getElementById('ax-0').classList.toggle('visible', i === 0 && !!analyses[0]);
+  document.getElementById('ax-1').classList.toggle('visible', i === 1 && !!analyses[1]);
+}
+
+// ═══════════════════════════════════════
+// SAVE / EXPORT
+// ═══════════════════════════════════════
+function openSaveModal() { document.getElementById('save-modal').classList.add('open'); saveMode = 'raw'; renderSaveOpts(); }
+function closeSaveModal() { document.getElementById('save-modal').classList.remove('open'); }
+function selectSaveMode(m) { saveMode = m; renderSaveOpts(); }
+function renderSaveOpts() { document.querySelectorAll('.modal-opt').forEach(el => { el.classList.toggle('selected', el.onclick.toString().includes(`'${saveMode}'`)); }); }
+
+async function executeSave() {
+  const raw = rawAnalyses[activeTab];
+  if (!raw) { closeSaveModal(); return; }
+
+  if (saveMode === 'edit') {
+    closeSaveModal();
+    const el = document.getElementById('ax-' + activeTab);
+    el.innerHTML = `<div class="ax-label">Edit Analysis</div><textarea class="ax-edit" id="edit-area">${raw}</textarea>
+      <div style="margin-top:8px;display:flex;gap:6px;justify-content:flex-end">
+        <button class="mbtn ghost" onclick="renderAnalysis(${activeTab});switchTab(${activeTab})">Cancel</button>
+        <button class="mbtn primary" onclick="saveEdited(${activeTab})">Save to Box</button>
+      </div>`;
+    el.classList.add('visible');
+    return;
+  }
+
+  closeSaveModal();
+  setStep(3);
+  try {
+    const content = saveMode === 'formatted' ? generateHTML(analyses[activeTab]) : raw;
+    const ext = saveMode === 'formatted' ? '.html' : '.md';
+    const name = `Analysis-${new Date().toISOString().slice(0, 10)}${ext}`;
+    const blob = new Blob([content], { type: 'text/plain' });
+    const file = new File([blob], name);
+    await boxUpload(rootFolderId, file);
+    alert('Saved to Box: ' + name);
+  } catch (e) { alert('Save failed: ' + e.message); }
+}
+
+async function saveEdited(idx) {
+  const text = document.getElementById('edit-area').value;
+  rawAnalyses[idx] = text;
+  try { analyses[idx] = JSON.parse(text); } catch { analyses[idx] = { raw: text }; }
+  renderAnalysis(idx); switchTab(idx);
+  setStep(3);
+  try {
+    const name = `Analysis-${new Date().toISOString().slice(0, 10)}.md`;
+    const blob = new Blob([text], { type: 'text/plain' });
+    const file = new File([blob], name);
+    await boxUpload(rootFolderId, file);
+    alert('Saved to Box: ' + name);
+  } catch (e) { alert('Save failed: ' + e.message); }
+}
+
+function exportAnalysis() {
+  const ax = analyses[activeTab];
+  if (!ax) return;
+  const content = generateHTML(ax);
+  const blob = new Blob([content], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `Renewal-Analysis-${new Date().toISOString().slice(0, 10)}.html`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function generateHTML(ax) {
+  if (!ax || ax.raw || ax.error) return rawAnalyses[activeTab] || '';
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:system-ui,sans-serif;max-width:800px;margin:40px auto;color:#1a1816;line-height:1.6}h1{font-size:18px;border-bottom:2px solid #7c3aed;padding-bottom:8px}h2{font-size:14px;margin-top:20px;color:#4a4640}.bl{padding:12px 16px;background:#f5f3ff;border-left:3px solid #7c3aed;margin:12px 0}.mc{border:1px solid #e2ddd4;padding:10px 14px;margin:6px 0;border-radius:6px}.badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 7px;border-radius:3px}.us{background:#fef2f2;color:#dc2626}.uf{background:#fffbeb;color:#f59e0b}.ds{background:#f0fdf4;color:#16a34a}.cx{padding:6px 0;font-size:13px}.fail{color:#dc2626}.warn{color:#f59e0b}.pass{color:#16a34a}.risk{padding:12px;background:#f8f6f1;border-radius:6px;margin-top:12px}</style></head><body>
+  <h1>${ax.label || 'Renewal Analysis'}</h1>
+  <h2>Bottom Line</h2><div class="bl">${ax.bottom_line || ''}</div>
+  <h2>Material Changes</h2>${(ax.material_changes || []).map(mc => `<div class="mc"><strong>${mc.name}</strong> <span class="badge ${({ up_severity: 'us', up_frequency: 'uf', down_severity: 'ds' }[mc.severity]) || ''}">${mc.severity?.replace('_', ' ') || ''}</span><br><small><b>Changed:</b> ${mc.changed}<br><b>Impact:</b> ${mc.impact}${mc.reference ? '<br><b>Ref:</b> ' + mc.reference : ''}</small></div>`).join('')}
+  <h2>Compliance</h2>${(ax.compliance || []).map(c => `<div class="cx ${c.status}">${({ pass: '✓', fail: '✗', warn: '⚠' }[c.status]) || '•'} ${c.text}</div>`).join('')}
+  <h2>Net Risk Assessment</h2><div class="risk">${ax.risk_assessment || ''}</div>
+  </body></html>`;
+}
+
+// ═══════════════════════════════════════
+// STEP INDICATOR
+// ═══════════════════════════════════════
+function setStep(n) {
+  pipelineStep = n;
+  for (let i = 0; i < 4; i++) {
+    const el = document.getElementById('step-' + i);
+    el.classList.remove('done', 'active');
+    if (n >= 0 && i < n) el.classList.add('done');
+    if (i === n) el.classList.add('active');
+  }
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+document.addEventListener('click', e => { if (!e.target.closest('.skin-sel')) document.getElementById('skin-dd').classList.remove('open'); });
+document.getElementById('token-input').addEventListener('keydown', e => { if (e.key === 'Enter') connect(); });
+applySkin(0); renderSkinDD();
+</script>
+</body>
+</html>
