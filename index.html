@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CityCenter · Renewal Analyst</title>
+<title>CityCenter Insurance · Renewal Analysis Tool</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#F7F6F3;--surface:#fff;--surface-hover:#F3F1ED;--surface-active:#EFEEE9;--text:#2B2D2E;--text-2:#4A4E54;--text-3:#6B7280;--text-4:#A0A4AB;--border:#E5E3DE;--border-soft:#EFEEE9;--pri:#3D5A80;--pri-soft:rgba(61,90,128,.06);--pri-deep:#2E4A6E;--pri-border:rgba(61,90,128,.14);--acc:#7FB8A4;--acc-deep:#6BA593;--pass:#5BAD7A;--pass-soft:#EDF7F0;--fail:#C75B5B;--fail-soft:#FDF0F0;--warn:#D4A84B;--warn-soft:#FDF6E8;--ease:cubic-bezier(.22,1,.36,1);--fast:150ms;--sb-bg:#2B2D2E;--sb-surface:rgba(255,255,255,.04);--sb-hover:rgba(255,255,255,.06);--sb-text:#E5E3DE;--sb-text-2:#A0A4AB;--sb-text-3:#6B7280;--sb-border:rgba(255,255,255,.07);--sb-active:rgba(61,90,128,.2)}
@@ -154,7 +154,7 @@ document.getElementById('connScreen').classList.add('hidden');const al=document.
 
 function doDisconnect(){TK='';user=null;cls=[];agents=[];activeC=null;mv='empty';document.getElementById('connScreen').classList.remove('hidden');document.getElementById('appLayout').classList.add('hidden');document.getElementById('topUser').textContent='';document.getElementById('topDc').classList.add('hidden')}
 
-async function loadCls(){const it=await bGet('/folders/'+raId+'/items?fields=name,type&limit=200');cls=[];for(const c of it.entries.filter(e=>e.type==='folder')){const s=await bGet('/folders/'+c.id+'/items?fields=name,type&limit=200');const f=n=>{const x=s.entries.find(e=>e.type==='folder'&&e.name===n);return x?x.id:null};cls.push({id:c.id,name:c.name,folders:{expiring:f('Expiring'),renewalOptions:f('Renewal Options'),evaluated:f('Evaluated Renewals'),crossCompare:f('Cross Comparisons Reports')}})}document.getElementById('stTxt').textContent='Connected · '+cls.length+' client'+(cls.length!==1?'s':'')}
+async function loadCls(){const it=await bGet('/folders/'+raId+'/items?fields=name,type&limit=200');cls=[];for(const c of it.entries.filter(e=>e.type==='folder')){const s=await bGet('/folders/'+c.id+'/items?fields=name,type&limit=200');const dirs=s.entries.filter(e=>e.type==='folder');const f=n=>{const nl=n.toLowerCase().trim();const x=dirs.find(e=>e.name.toLowerCase().trim()===nl);return x?x.id:null};cls.push({id:c.id,name:c.name,folders:{expiring:f('Expiring'),renewalOptions:f('Renewal Options'),evaluated:f('Evaluated Renewals'),crossCompare:f('Cross Comparisons Reports')}})}document.getElementById('stTxt').textContent='Connected · '+cls.length+' client'+(cls.length!==1?'s':'')}
 
 function renderAg(){const el=document.getElementById('agPick'),sel=document.getElementById('agSel');if(!agents.length){el.classList.add('hidden');return}el.classList.remove('hidden');let h='<option value="">Default (raw prompt)</option>';agents.forEach(a=>{h+='<option value="'+a.id+'"'+(selAgent===a.id?' selected':'')+'>'+esc(a.name)+'</option>'});sel.innerHTML=h;sel.onchange=()=>{selAgent=sel.value||null}}
 function refreshLib(){loadCls().then(()=>renderLib())}
@@ -167,9 +167,9 @@ let h='';
 for(let ci=0;ci<cls.length;ci++){const c=cls[ci];if(s&&!c.name.toLowerCase().includes(s))continue;const ic=collapsed.has(c.id);
 h+='<div class="lib-group"><div class="lib-gh'+(ic?' c':'')+'" onclick="togColl(\''+c.id+'\')">'+cv+'<span class="gn">'+esc(c.name)+'</span><div class="ga"><button class="ga-btn" onclick="event.stopPropagation();selCl('+ci+')" title="Open workspace"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button></div></div>';
 h+='<div class="lib-gb'+(ic?' c':'')+'" style="max-height:2000px"><div class="lib-sub">Input</div>';
-for(const fd of FD.filter(f=>f.c==='i')){const fid=fd.n==='Expiring'?c.folders.expiring:c.folders.renewalOptions;if(!fid)continue;h+='<div class="lib-it" onclick="openLf(\''+fid+'\',\''+escA(c.name+' / '+fd.n)+'\')"><div class="lib-ico inp">'+fi+'</div><div class="lib-info"><div class="lib-nm">'+esc(fd.n)+'</div></div></div>'}
+for(const fd of FD.filter(f=>f.c==='i')){const fid=fd.n==='Expiring'?c.folders.expiring:c.folders.renewalOptions;if(fid){h+='<div class="lib-it" onclick="openLf(\''+fid+'\',\''+escA(c.name+' / '+fd.n)+'\')"><div class="lib-ico inp">'+fi+'</div><div class="lib-info"><div class="lib-nm">'+esc(fd.n)+'</div></div></div>'}else{h+='<div class="lib-it" style="opacity:.35;cursor:default"><div class="lib-ico inp">'+fi+'</div><div class="lib-info"><div class="lib-nm">'+esc(fd.n)+'</div><div class="lib-meta">not found in Box</div></div></div>'}}
 h+='<div class="lib-sub">Output</div>';
-for(const fd of FD.filter(f=>f.c==='o')){const fid=fd.n==='Evaluated Renewals'?c.folders.evaluated:c.folders.crossCompare;if(!fid)continue;h+='<div class="lib-it out-it" onclick="openLf(\''+fid+'\',\''+escA(c.name+' / '+fd.n)+'\')"><div class="lib-ico out">'+fi+'</div><div class="lib-info"><div class="lib-nm">'+esc(fd.n)+'</div></div></div>'}
+for(const fd of FD.filter(f=>f.c==='o')){const fid=fd.n==='Evaluated Renewals'?c.folders.evaluated:c.folders.crossCompare;if(fid){h+='<div class="lib-it out-it" onclick="openLf(\''+fid+'\',\''+escA(c.name+' / '+fd.n)+'\')"><div class="lib-ico out">'+fi+'</div><div class="lib-info"><div class="lib-nm">'+esc(fd.n)+'</div></div></div>'}else{h+='<div class="lib-it out-it" style="opacity:.35;cursor:default"><div class="lib-ico out">'+fi+'</div><div class="lib-info"><div class="lib-nm">'+esc(fd.n)+'</div><div class="lib-meta">not found in Box</div></div></div>'}}
 h+='</div></div>'}
 el.innerHTML=h}
 
