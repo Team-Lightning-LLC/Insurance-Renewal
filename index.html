@@ -154,8 +154,35 @@
     .wiz-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:24px; width:480px; box-shadow:0 2px 12px rgba(0,0,0,.03); }
     .wiz-card h3 { font-size:17px; font-weight:700; margin-bottom:4px; }
     .wiz-desc { font-size:12px; color:var(--text-3); margin-bottom:16px; }
-    .wiz-up { display:flex; align-items:center; gap:8px; padding:9px 14px; border:1.5px dashed var(--border); border-radius:8px; margin-bottom:12px; cursor:pointer; font-size:12px; font-weight:500; color:var(--text-3); transition:all .15s; }
+    .wiz-up { display:flex; align-items:center; gap:8px; padding:9px 14px; border:1.5px dashed var(--border); border-radius:8px; cursor:pointer; font-size:12px; font-weight:500; color:var(--text-3); transition:all .15s; flex:1; }
     .wiz-up:hover { border-color:var(--pri); color:var(--pri); background:var(--pri-soft); }
+    .wiz-ar { display:flex; gap:8px; margin-bottom:12px; }
+
+    /* Box Picker Modal */
+    .bp-ov { position:fixed; inset:0; background:rgba(43,45,46,.5); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:2500; }
+    .bp-modal { background:var(--surface); border-radius:12px; width:520px; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 24px 80px rgba(0,0,0,.2); overflow:hidden; }
+    .bp-hdr { padding:14px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+    .bp-hdr h3 { font-size:15px; font-weight:700; flex:1; }
+    .bp-close { background:none; border:1px solid var(--border); border-radius:5px; width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-3); }
+    .bp-crumbs { padding:8px 20px; font-size:12px; display:flex; align-items:center; gap:4px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+    .bp-crumb { color:var(--pri); cursor:pointer; font-weight:600; }
+    .bp-crumb.cur { color:var(--text); cursor:default; }
+    .bp-list { flex:1; overflow-y:auto; min-height:200px; max-height:400px; }
+    .bp-row { display:flex; align-items:center; gap:10px; padding:10px 20px; border-bottom:1px solid rgba(229,227,222,.3); cursor:pointer; font-size:13px; transition:background .1s; }
+    .bp-row:hover { background:var(--pri-soft); }
+    .bp-row.sel { background:var(--pri-soft); }
+    .bp-row-ico { width:20px; height:20px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--text-4); }
+    .bp-row-ico.dir { color:var(--pri); }
+    .bp-row-nm { flex:1; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .bp-row-meta { font-size:11px; color:var(--text-4); flex-shrink:0; }
+    .bp-row-chk { width:16px; height:16px; border-radius:4px; border:1.5px solid var(--border); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .bp-row.sel .bp-row-chk { background:var(--pri); border-color:var(--pri); color:#fff; }
+    .bp-chips { padding:8px 20px; display:flex; flex-wrap:wrap; gap:4px; max-height:50px; overflow-y:auto; border-top:1px solid var(--border); }
+    .bp-chip { padding:3px 10px; background:var(--pri-soft); border:1px solid var(--pri-border); border-radius:14px; font-size:11px; font-weight:600; color:var(--pri); display:flex; align-items:center; gap:4px; }
+    .bp-chip-x { cursor:pointer; opacity:.5; }
+    .bp-chip-x:hover { opacity:1; }
+    .bp-foot { padding:12px 20px; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end; }
+    .bp-empty { padding:40px; text-align:center; font-size:12px; color:var(--text-4); }
     .fr { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:8px; margin-bottom:5px; cursor:pointer; border:1.5px solid var(--border); transition:all .12s ease-out; }
     .fr:hover { border-color:var(--text-4); }
     .fr.sel { background:var(--pri-soft); border-color:var(--pri); }
@@ -309,7 +336,7 @@
 /* ═══ BOX API ═══ */
 var BOX='https://api.box.com/2.0',BUP='https://upload.box.com/api/2.0',TK='';
 function bGet(p){return fetch(BOX+p,{headers:{Authorization:'Bearer '+TK}}).then(function(r){if(!r.ok)throw new Error(r.status+' '+r.statusText);return r.json()})}
-function bPost(p,b){return fetch(BOX+p,{method:'POST',headers:{Authorization:'Bearer '+TK,'Content-Type':'application/json'},body:JSON.stringify(b)}).then(function(r){if(!r.ok)throw new Error(r.status+' '+r.statusText);return r.json()})}
+function bPost(p,b){return fetch(BOX+p,{method:'POST',headers:{Authorization:'Bearer '+TK,'Content-Type':'application/json'},body:JSON.stringify(b)}).then(function(r){if(!r.ok)return r.text().then(function(t){console.error('[Box API] '+r.status+' '+p+':',t);throw new Error(r.status+' '+r.statusText+' — '+(t||'').slice(0,200))});return r.json()})}
 function bMkDir(n,pid){return bPost('/folders',{name:n,parent:{id:pid}})}
 function bUpFile(file,fid){var f=new FormData();f.append('attributes',JSON.stringify({name:file.name,parent:{id:fid}}));f.append('file',file,file.name);return fetch(BUP+'/files/content',{method:'POST',headers:{Authorization:'Bearer '+TK},body:f}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()})}
 
@@ -412,7 +439,19 @@ function doConnect(){
 }
 function doDisconnect(){TK='';user=null;cls=[];agents=[];selAgent=null;selAgentConfig=null;activeC=null;mv='empty';document.getElementById('connScr').classList.remove('hidden');document.getElementById('appLay').classList.add('hidden');document.getElementById('topUser').textContent='';document.getElementById('topDc').classList.add('hidden')}
 function loadCls(){return bGet('/folders/'+raId+'/items?fields=name,type&limit=200').then(function(it){var folders=it.entries.filter(function(e){return e.type==='folder'});cls=[];var chain=Promise.resolve();folders.forEach(function(c){chain=chain.then(function(){return bGet('/folders/'+c.id+'/items?fields=name,type&limit=200').then(function(s){var dirs=s.entries.filter(function(e){return e.type==='folder'});function find(n){var nl=n.toLowerCase();var x=dirs.find(function(e){return e.name.toLowerCase()===nl});return x?x.id:null}cls.push({id:c.id,name:c.name,folders:{expiring:find('Expiring'),renewalOptions:find('Renewal Options'),evaluated:find('Evaluated Renewals'),crossCompare:find('Cross Comparisons Reports')},counts:{}})})})});return chain.then(function(){document.getElementById('stTxt').textContent='Connected \u00b7 '+cls.length+' client'+(cls.length!==1?'s':'');var cchain=Promise.resolve();cls.forEach(function(cl){['expiring','renewalOptions','evaluated','crossCompare'].forEach(function(key){var fid=cl.folders[key];if(!fid)return;cchain=cchain.then(function(){return bGet('/folders/'+fid+'/items?limit=1&fields=name').then(function(r){cl.counts[key]=r.total_count||0}).catch(function(){cl.counts[key]=0})})})});return cchain})})}
-function renderAgent(){var el=document.getElementById('agBox'),sel=document.getElementById('agSel');if(!agents.length){el.classList.add('hidden');return}el.classList.remove('hidden');var h='<option value="">Default (raw prompt)</option>';agents.forEach(function(a){h+='<option value="'+a.id+'"'+(selAgent===a.id?' selected':'')+'>'+esc(a.name)+'</option>'});sel.innerHTML=h;sel.onchange=function(){var aid=sel.value||null;selAgent=aid;selAgentConfig=null;if(aid){bGet('/ai_agents/'+aid+'?fields=ask').then(function(full){if(full.ask)selAgentConfig=full.ask;toast('Agent loaded','pass')}).catch(function(e){toast('Agent load failed: '+e.message,'fail');selAgent=null;selAgentConfig=null;sel.value=''})}};if(selAgent){bGet('/ai_agents/'+selAgent+'?fields=ask').then(function(full){if(full.ask)selAgentConfig=full.ask}).catch(function(){selAgent=null;selAgentConfig=null})}}
+function renderAgent(){var el=document.getElementById('agBox'),sel=document.getElementById('agSel');if(!agents.length){el.classList.add('hidden');return}el.classList.remove('hidden');var h='<option value="">Default (raw prompt)</option>';agents.forEach(function(a){h+='<option value="'+a.id+'"'+(selAgent===a.id?' selected':'')+'>'+esc(a.name)+'</option>'});sel.innerHTML=h;sel.onchange=function(){var aid=sel.value||null;selAgent=aid;selAgentConfig=null;if(aid){bGet('/ai_agents/'+aid+'?fields=ask').then(function(full){if(full.ask)selAgentConfig=cleanAgentConfig(full.ask);console.log('[Agent] Loaded config:',JSON.stringify(selAgentConfig,null,2));toast('Agent loaded','pass')}).catch(function(e){toast('Agent load failed: '+e.message,'fail');selAgent=null;selAgentConfig=null;sel.value=''})}};if(selAgent){bGet('/ai_agents/'+selAgent+'?fields=ask').then(function(full){if(full.ask)selAgentConfig=cleanAgentConfig(full.ask);console.log('[Agent] Auto-loaded:',JSON.stringify(selAgentConfig,null,2))}).catch(function(){selAgent=null;selAgentConfig=null})}}
+
+function cleanAgentConfig(ask){
+  // Strip Studio-only fields, keep only what /ai/ask accepts
+  var clean={type:'ai_agent_ask'};
+  var processorKeys=['model','num_tokens_for_completion','llm_endpoint_params','system_message','prompt_template','embeddings','content_template'];
+  function stripProcessor(p){if(!p||typeof p!=='object')return undefined;var o={};processorKeys.forEach(function(k){if(p[k]!==undefined)o[k]=p[k]});return Object.keys(o).length?o:undefined}
+  if(ask.long_text)clean.long_text=stripProcessor(ask.long_text);
+  if(ask.basic_text)clean.basic_text=stripProcessor(ask.basic_text);
+  if(ask.long_text_multi)clean.long_text_multi=stripProcessor(ask.long_text_multi);
+  if(ask.basic_text_multi)clean.basic_text_multi=stripProcessor(ask.basic_text_multi);
+  return clean;
+}
 function refreshLib(){loadCls().then(function(){renderLib()})}
 
 /* ═══ LIBRARY PANEL ═══ */
@@ -537,7 +576,7 @@ function renderMain(){
 
   if(mv==='wizard0'){
     h+='<div class="wiz"><div class="wiz-card"><h3>Select the expiring policy</h3><div class="wiz-desc">From '+esc(c.name)+' / Expiring</div>';
-    h+='<div class="wiz-up" onclick="uploadToFolder(\''+c.folders.expiring+'\')">'+upSvg+' Upload policy PDF</div>';
+    h+='<div class="wiz-ar"><div class="wiz-up" onclick="uploadToFolder(\''+c.folders.expiring+'\')">'+upSvg+' Upload PDF</div><div class="wiz-up" onclick="openBoxPicker(\''+c.folders.expiring+'\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> Select from Box</div></div>';
     if(!expF.length){h+='<div style="padding:20px;text-align:center;color:var(--text-4);font-size:12px">No files yet</div>'}
     else{expF.forEach(function(f){var s=selExp===f.id;h+='<div class="fr'+(s?' sel':'')+'" data-fid="'+f.id+'" onclick="toggleExp(\''+f.id+'\')">'+docSvg(s)+'<span class="fr-nm">'+esc(f.name)+'</span><button class="fr-eye" onclick="event.stopPropagation();previewFile(\''+f.id+'\',\''+escA(f.name)+'\')">'+eyeSvg+'</button><span class="fr-chk" style="display:'+(s?'inline':'none')+'">'+chkSvg+'</span></div>'})}
     h+='<div class="wiz-acts"><button class="wb p" '+(selExp?'':'disabled')+' onclick="mv=\'wizard1\';renderMain()">Continue</button></div></div></div>';
@@ -545,7 +584,7 @@ function renderMain(){
   }else if(mv==='wizard1'){
     var expFile=selExp?expF.find(function(x){return x.id===selExp}):null;
     h+='<div class="wiz"><div class="wiz-card"><h3>Select candidates to compare</h3><div class="wiz-desc">Comparing against: <strong>'+(expFile?esc(expFile.name):'(none)')+'</strong></div>';
-    h+='<div class="wiz-up" onclick="uploadToFolder(\''+c.folders.renewalOptions+'\')">'+upSvg+' Upload candidate PDFs</div>';
+    h+='<div class="wiz-ar"><div class="wiz-up" onclick="uploadToFolder(\''+c.folders.renewalOptions+'\')">'+upSvg+' Upload PDFs</div><div class="wiz-up" onclick="openBoxPicker(\''+c.folders.renewalOptions+'\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> Select from Box</div></div>';
     if(!candF.length){h+='<div style="padding:20px;text-align:center;color:var(--text-4);font-size:12px">No files yet</div>'}
     else{candF.forEach(function(f){var s=selCands.indexOf(f.id)>=0;h+='<div class="fr'+(s?' sel':'')+'" data-fid="'+f.id+'" onclick="togCand(\''+f.id+'\')">'+docSvg(s)+'<span class="fr-nm">'+esc(f.name)+'</span><button class="fr-eye" onclick="event.stopPropagation();previewFile(\''+f.id+'\',\''+escA(f.name)+'\')">'+eyeSvg+'</button><span class="fr-chk" style="display:'+(s?'inline':'none')+'">'+chkSvg+'</span></div>'})}
     h+='<div class="wiz-acts"><button class="wb" onclick="mv=\'wizard0\';renderMain()">Back</button><button class="wb p" '+(selCands.length?'':'disabled')+' onclick="runEvs()">'+(selCands.length>1?'Evaluate '+selCands.length+' Candidates':selCands.length===1?'Evaluate':'Select files')+'</button></div></div></div>';
@@ -561,6 +600,15 @@ function renderMain(){
 }
 function showEv(i){aEi=i;mv='results';renderMain()}
 
+function toggleSec(key,hdEl){
+  exSec[key]=!exSec[key];
+  var sec=hdEl.parentElement;
+  var bd=sec.querySelector('.sec-bd,.ix-bd');
+  var chv=hdEl.querySelector('.sec-chv');
+  if(bd)bd.style.display=exSec[key]?'block':'none';
+  if(chv)chv.style.transform='rotate('+(exSec[key]?'180':'0')+'deg)';
+}
+
 /* ═══ RUN EVALS ═══ */
 function runEvs(){
   mv='running';renderMain();var c=cls[activeC],evs=cEvs[c.id]||[];
@@ -572,7 +620,9 @@ function runEvs(){
       var prog=document.getElementById('runProg');if(prog)prog.textContent='Evaluating '+(i+1)+'/'+selCands.length+': '+(cf?cf.name:cid);
       var body={mode:'multiple_item_qa',items:[{id:selExp,type:'file'},{id:cid,type:'file'}],prompt:PROMPT};
       if(selAgentConfig)body.ai_agent=selAgentConfig;
+      console.log('[Eval] Request body:',JSON.stringify(body,null,2));
       return bPost('/ai/ask',body).then(function(res){
+        console.log('[Eval] Response:',JSON.stringify(res,null,2).slice(0,2000));
         var ed;try{ed=norm(res.answer)}catch(pe){ed={raw:res.answer,verdict:'unknown',summary:'Parse failed.',sections:[],interactions:[]}}
         var ev={name:(cf?cf.name.replace('.pdf',''):'Candidate '+(i+1)),data:ed,cid:cid};
         evs.push(ev);newEvs.push(ev);
@@ -619,24 +669,25 @@ function renderRes(ev){
 
   (d.sections||[]).forEach(function(sec){
     var k='s'+aEi+'-'+sec.num,open=exSec[k],fds=sec.fields||[],dc=fds.filter(function(f){return f.diff}).length;
-    h+='<div class="sec"><div class="sec-hd" onclick="exSec[\''+k+'\']=!exSec[\''+k+'\'];renderMain()"><span style="font-family:IBM Plex Mono,monospace;font-size:10px;color:var(--text-4);width:16px">'+sec.num+'</span><span style="font-size:13px;font-weight:600;flex:1">'+esc(sec.name)+'</span>';
+    h+='<div class="sec"><div class="sec-hd" onclick="toggleSec(\''+k+'\',this)"><span style="font-family:IBM Plex Mono,monospace;font-size:10px;color:var(--text-4);width:16px">'+sec.num+'</span><span style="font-size:13px;font-weight:600;flex:1">'+esc(sec.name)+'</span>';
     if(dc)h+='<span class="tag tag-warn">'+dc+' diff'+(dc>1?'s':'')+'</span>';
     else h+='<span style="font-size:10px;color:var(--pass);font-weight:600">match</span>';
-    h+='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-4)" stroke-width="2" style="transition:transform .2s;transform:rotate('+(open?'180':'0')+'deg)"><polyline points="6 9 12 15 18 9"/></svg></div>';
-    if(open&&fds.length){
-      h+='<div class="sec-bd"><div class="sec-gh"><span style="color:var(--text-4)">Field</span><span style="color:var(--pri)">Expiring</span><span style="color:var(--acc-deep)">Candidate</span></div>';
+    h+='<svg class="sec-chv" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-4)" stroke-width="2" style="transition:transform .2s;transform:rotate('+(open?'180':'0')+'deg)"><polyline points="6 9 12 15 18 9"/></svg></div>';
+    h+='<div class="sec-bd" style="display:'+(open?'block':'none')+'">';
+    if(fds.length){
+      h+='<div class="sec-gh"><span style="color:var(--text-4)">Field</span><span style="color:var(--pri)">Expiring</span><span style="color:var(--acc-deep)">Candidate</span></div>';
       fds.forEach(function(f){
         h+='<div class="sec-row'+(f.diff?' diff':'')+'"><div style="font-size:12px;font-weight:600">'+esc(f.field)+'</div><div style="font-size:12px;color:var(--text-2);line-height:1.55;padding-right:14px">'+esc(String(f.expiring||''))+'</div><div>';
         h+='<div style="font-size:12px;line-height:1.55'+(f.diff?';font-weight:600' :'')+'"'+(f.diff?' class="sec-dbar"':'')+'>'+esc(String(f.candidate||''))+'</div>';
         if(f.diff&&f.significance)h+='<div style="font-size:11px;color:var(--text-3);line-height:1.5;margin-top:4px"'+(f.diff?' class="sec-dbar"':'')+'>'+esc(f.significance)+'</div>';
         h+='</div></div>'});
-      h+='</div>'}
-    h+='</div>'});
+    }
+    h+='</div></div>'});
 
   var ix=d.interactions||[];
   if(ix.length){var ik='ix'+aEi,io=exSec[ik];
-    h+='<div class="ix"><div class="ix-hd" onclick="exSec[\''+ik+'\']=!exSec[\''+ik+'\'];renderMain()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pri)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg><span style="font-size:13px;font-weight:700;flex:1">Interactions</span><span style="font-size:10px;color:var(--text-4)">'+ix.length+'</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-4)" stroke-width="2" style="transform:rotate('+(io?180:0)+'deg)"><polyline points="6 9 12 15 18 9"/></svg></div>';
-    if(io){h+='<div class="ix-bd">';ix.forEach(function(x){h+='<div class="ix-row"><span style="font-family:IBM Plex Mono,monospace;font-size:10px;color:var(--pri);background:var(--pri-soft);padding:2px 7px;border-radius:4px;flex-shrink:0;margin-top:2px">'+esc(x.sections)+'</span><div><div style="font-size:12px;font-weight:600;margin-bottom:2px">'+esc(x.name)+'</div><div style="font-size:11px;color:var(--text-3);line-height:1.5">'+esc(x.effect)+'</div></div></div>'});h+='</div>'}
+    h+='<div class="ix"><div class="ix-hd" onclick="toggleSec(\''+ik+'\',this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pri)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg><span style="font-size:13px;font-weight:700;flex:1">Interactions</span><span style="font-size:10px;color:var(--text-4)">'+ix.length+'</span><svg class="sec-chv" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-4)" stroke-width="2" style="transition:transform .2s;transform:rotate('+(io?180:0)+'deg)"><polyline points="6 9 12 15 18 9"/></svg></div>';
+    h+='<div class="ix-bd" style="display:'+(io?'block':'none')+'">';ix.forEach(function(x){h+='<div class="ix-row"><span style="font-family:IBM Plex Mono,monospace;font-size:10px;color:var(--pri);background:var(--pri-soft);padding:2px 7px;border-radius:4px;flex-shrink:0;margin-top:2px">'+esc(x.sections)+'</span><div><div style="font-size:12px;font-weight:600;margin-bottom:2px">'+esc(x.name)+'</div><div style="font-size:11px;color:var(--text-3);line-height:1.5">'+esc(x.effect)+'</div></div></div>'});h+='</div>';
     h+='</div>'}
 
   h+='<div class="r-acts">'+(ev.saved?'<span style="font-size:11px;color:var(--pass);font-weight:500">Saved to Box</span>':'<button class="wb" onclick="saveEv('+aEi+')">Save to Box</button>')+'<div style="flex:1"></div><button class="wb" onclick="mv=\'wizard0\';selExp=null;selCands=[];renderMain()">New Comparison</button></div></div>';
@@ -645,6 +696,89 @@ function renderRes(ev){
 
 /* ═══ SAVE ═══ */
 function saveEv(idx){var c=cls[activeC],evs=cEvs[c.id],ev=evs[idx];if(!ev||!c.folders.evaluated)return;ev.saving=true;renderMain();var fn='Eval_'+ev.name.replace(/[^a-zA-Z0-9]/g,'_')+'_'+new Date().toISOString().slice(0,10)+'.json';var blob=new Blob([JSON.stringify(ev.data,null,2)],{type:'application/json'});var form=new FormData();form.append('attributes',JSON.stringify({name:fn,parent:{id:c.folders.evaluated}}));form.append('file',blob,fn);fetch(BUP+'/files/content',{method:'POST',headers:{Authorization:'Bearer '+TK},body:form}).then(function(r){if(!r.ok)throw new Error(r.status);ev.saving=false;ev.saved=true;toast('Saved to Box','pass');renderMain()}).catch(function(e){ev.saving=false;toast('Save failed: '+e.message,'fail');renderMain()})}
+
+/* ═══ BOX FILE PICKER ═══ */
+var bpTarget=null,bpPath=[{id:'0',name:'All Files'}],bpSelected=new Map();
+
+function openBoxPicker(targetFolderId){
+  bpTarget=targetFolderId;bpPath=[{id:'0',name:'All Files'}];bpSelected=new Map();
+  var m=document.getElementById('bpModal');if(m)m.remove();
+  m=document.createElement('div');m.id='bpModal';m.className='bp-ov';
+  m.onclick=function(e){if(e.target===m)m.remove()};
+  m.innerHTML='<div class="bp-modal"><div class="bp-hdr"><h3>Select files from Box</h3><button class="bp-close" onclick="document.getElementById(\'bpModal\').remove()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div class="bp-crumbs" id="bpCrumbs"></div><div class="bp-list" id="bpList"><div class="bp-empty">Loading...</div></div><div class="bp-chips" id="bpChips"></div><div class="bp-foot"><button class="wb" onclick="document.getElementById(\'bpModal\').remove()">Cancel</button><button class="wb p" id="bpAdd" onclick="bpCommit()">Add Selected</button></div></div>';
+  document.body.appendChild(m);
+  bpLoad('0');
+}
+
+function bpLoad(fid){
+  bpPath[bpPath.length-1].id===fid||bpPath.push({id:fid,name:'...'});
+  bpRenderCrumbs();
+  document.getElementById('bpList').innerHTML='<div class="bp-empty">Loading...</div>';
+  bGet('/folders/'+fid+'/items?fields=name,type,size,modified_at&limit=200').then(function(res){
+    var items=(res.entries||[]).sort(function(a,b){return a.type===b.type?a.name.localeCompare(b.name):(a.type==='folder'?-1:1)});
+    if(!items.length){document.getElementById('bpList').innerHTML='<div class="bp-empty">Empty folder</div>';return}
+    var dirIco='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
+    var fileIco='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+    var h='';
+    items.forEach(function(it){
+      var eName=escA(it.name);
+      if(it.type==='folder'){
+        h+='<div class="bp-row" onclick="bpEnter(\''+it.id+'\',\''+eName+'\')"><div class="bp-row-ico dir">'+dirIco+'</div><div class="bp-row-nm">'+esc(it.name)+'</div><div class="bp-row-meta">&rarr;</div></div>';
+      } else {
+        var sel=bpSelected.has(it.id);
+        var sz=it.size?(it.size>1048576?((it.size/1048576).toFixed(1)+' MB'):((it.size/1024|0)+' KB')):'';
+        h+='<div class="bp-row'+(sel?' sel':'')+'" data-fid="'+it.id+'" onclick="bpToggle(\''+it.id+'\',\''+eName+'\')"><div class="bp-row-chk">'+(sel?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':'')+'</div><div class="bp-row-ico">'+fileIco+'</div><div class="bp-row-nm">'+esc(it.name)+'</div><div class="bp-row-meta">'+sz+'</div></div>';
+      }
+    });
+    document.getElementById('bpList').innerHTML=h;
+  }).catch(function(e){document.getElementById('bpList').innerHTML='<div class="bp-empty">Error: '+esc(e.message)+'</div>'});
+}
+
+function bpEnter(id,name){bpPath.push({id:id,name:name});bpLoad(id)}
+function bpNav(idx){bpPath=bpPath.slice(0,idx+1);bpLoad(bpPath[idx].id)}
+function bpRenderCrumbs(){
+  document.getElementById('bpCrumbs').innerHTML=bpPath.map(function(p,i){
+    return i===bpPath.length-1?'<span class="bp-crumb cur">'+esc(p.name)+'</span>':'<span class="bp-crumb" onclick="bpNav('+i+')">'+esc(p.name)+'</span> <span style="color:var(--text-4)">/</span>';
+  }).join(' ');
+}
+function bpToggle(id,name){
+  if(bpSelected.has(id))bpSelected.delete(id);else bpSelected.set(id,name);
+  // Update row visuals directly
+  document.querySelectorAll('#bpList .bp-row[data-fid]').forEach(function(row){
+    var sel=bpSelected.has(row.dataset.fid);
+    row.classList.toggle('sel',sel);
+    var chk=row.querySelector('.bp-row-chk');
+    if(chk)chk.innerHTML=sel?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':'';
+  });
+  bpRenderChips();
+}
+function bpRenderChips(){
+  var h='';bpSelected.forEach(function(name,id){
+    h+='<span class="bp-chip">'+esc(name)+'<span class="bp-chip-x" onclick="event.stopPropagation();bpToggle(\''+escA(id)+'\',\''+escA(name)+'\')">×</span></span>';
+  });
+  document.getElementById('bpChips').innerHTML=h;
+  var btn=document.getElementById('bpAdd');if(btn)btn.disabled=!bpSelected.size;
+}
+
+function bpCommit(){
+  if(!bpSelected.size||!bpTarget)return;
+  document.getElementById('bpModal').remove();
+  toast('Copying '+bpSelected.size+' file(s)...','pass');
+  var chain=Promise.resolve();var count=0;
+  bpSelected.forEach(function(name,fileId){
+    chain=chain.then(function(){
+      return bPost('/files/'+fileId+'/copy',{parent:{id:bpTarget}}).then(function(){count++}).catch(function(e){
+        // 409 = name conflict, file may already exist — that's ok
+        if(e.message.indexOf('409')>=0)count++;
+        else toast('Failed to copy '+name+': '+e.message,'fail');
+      });
+    });
+  });
+  chain.then(function(){
+    if(count)toast('Added '+count+' file(s)','pass');
+    refreshFiles();
+  });
+}
 
 /* Init */
 renderMain();
