@@ -3,19 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Renewal Analyst</title>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>CityCenter · Renewal Analyst</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body, #root { height: 100%; }
-  body { font-family: 'Manrope', sans-serif; -webkit-font-smoothing: antialiased; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-  input::placeholder { color: #b5b0a4; }
-  input:focus, select:focus { outline: none; border-color: #8b5cf6 !important; box-shadow: 0 0 0 3px rgba(139,92,246,0.08); }
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-thumb { background: #c5bfb3; border-radius: 4px; }
-  ::selection { background: #8b5cf6; color: #fff; }
+*{box-sizing:border-box;margin:0;padding:0}html,body,#root{height:100%}
+body{font-family:'Plus Jakarta Sans',sans-serif;-webkit-font-smoothing:antialiased;background:#F7F6F3}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+input::placeholder,textarea::placeholder{color:#A0A4AB}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#3D5A80 !important;box-shadow:0 0 0 3px rgba(61,90,128,.08)}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:#D5D3CE;border-radius:6px}
+::selection{background:#3D5A80;color:#fff}
+select{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A0A4AB' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
 </style>
 </head>
 <body>
@@ -24,514 +23,277 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
 <script type="text/babel">
-const { useState } = React;
+const{useState,useEffect}=React;
+const FONT="'Plus Jakarta Sans',sans-serif",MONO="'IBM Plex Mono',monospace";
+const C={bg:"#F7F6F3",bg2:"#EFEEE9",bg3:"#E5E3DE",card:"#fff",b1:"#E5E3DE",b2:"#D5D3CE",b3:"#C0BDB5",t1:"#2B2D2E",t2:"#4A4E54",t3:"#6B7280",t4:"#A0A4AB",pri:"#3D5A80",pri2:"#2E4A6E",pris:"rgba(61,90,128,.06)",acc:"#7FB8A4",acc2:"#6BA593",green:"#5BAD7A",gbg:"#EDF7F0",amber:"#D4A84B",abg:"#FDF6E8",red:"#C75B5B",rbg:"#FDF0F0",topbar:"#2B2D2E"};
+const BOX="https://api.box.com/2.0",BOX_UP="https://upload.box.com/api/2.0";
+async function boxGet(t,p){const r=await fetch(BOX+p,{headers:{Authorization:"Bearer "+t}});if(!r.ok)throw new Error(r.status+" "+r.statusText);return r.json()}
+async function boxPost(t,p,b){const r=await fetch(BOX+p,{method:"POST",headers:{Authorization:"Bearer "+t,"Content-Type":"application/json"},body:JSON.stringify(b)});if(!r.ok)throw new Error(r.status+" "+r.statusText);return r.json()}
+async function boxUpload(t,fid,fn,c){const f=new FormData();f.append("attributes",JSON.stringify({name:fn,parent:{id:fid}}));f.append("file",new Blob([c],{type:"application/json"}),fn);const r=await fetch(BOX_UP+"/files/content",{method:"POST",headers:{Authorization:"Bearer "+t},body:f});if(!r.ok)throw new Error(r.status+" "+r.statusText);return r.json()}
+const EVAL_PROMPT="Compare the expiring policy against the candidate policy. Evaluate across all seven categories: Coverage Trigger & Time Architecture, Defense Cost Treatment, Limits Architecture, Exclusions, Endorsement Stack, Conditions, and Standard Boilerplate. Output the full evaluation matrix as a single valid JSON object. Every field you evaluate must appear — set diff:true with significance for differences, diff:false with significance:null for matches. Include the verdict, summary, interactions, and all section data. JSON only, no markdown, no prose outside the JSON.";
+function normalizeEval(raw){let data;if(typeof raw==="string"){const m=raw.match(/\{[\s\S]*\}/);if(m)data=JSON.parse(m[0]);else throw new Error("No JSON")}else data=raw;if(data.sections){data.sections=data.sections.map(s=>Object.assign({},s,{fields:(s.fields||[]).map(f=>{const exp=typeof f.expiring==="object"&&f.expiring!==null?f.expiring.verbatim||JSON.stringify(f.expiring):f.expiring;const cand=typeof f.candidate==="object"&&f.candidate!==null?f.candidate.verbatim||JSON.stringify(f.candidate):f.candidate;let sig=f.significance;if(sig==null){if(typeof f.expiring==="object"&&f.expiring&&f.expiring.significance)sig=f.expiring.significance;if(typeof f.candidate==="object"&&f.candidate&&f.candidate.significance)sig=f.candidate.significance}return{field:f.field,expiring:exp,candidate:cand,diff:f.diff!==undefined?f.diff:exp!==cand,significance:sig||null}})}))}if(!Array.isArray(data.interactions))data.interactions=[];return data}
 
-const FONT = "'Manrope', sans-serif";
-const DISPLAY = "'Space Grotesk', sans-serif";
-const MONO = "'IBM Plex Mono', monospace";
-const C = {
-  bg: "#faf9f7", bg2: "#f0ede6", card: "#fff", b1: "#e2ddd4", b2: "#d4cfc4",
-  t1: "#1a1816", t2: "#4a4640", t3: "#8a857a", t4: "#b5b0a4",
-  ac: "#8b5cf6", ac2: "#6d28d9", acs: "#f3f0ff",
-  green: "#16a34a", gbg: "#e8f5e9",
-  amber: "#f59e0b", abg: "#fff8e1",
-  red: "#e53935", rbg: "#ffebee",
-};
+const Tag=({children,color,bg})=><span style={{fontSize:10,fontWeight:600,color,background:bg,padding:"2px 8px",borderRadius:4,whiteSpace:"nowrap"}}>{children}</span>;
+const Btn=({children,primary,ghost,disabled,onClick,style:s})=><button onClick={disabled?undefined:onClick} style={Object.assign({padding:"8px 18px",fontSize:12,fontWeight:600,fontFamily:FONT,border:ghost?"1px solid "+C.b1:"none",borderRadius:6,cursor:disabled?"not-allowed":"pointer",opacity:disabled?.35:1,color:primary?"#fff":C.t3,background:primary?C.pri:ghost?C.card:C.bg2,boxShadow:primary&&!disabled?"0 2px 10px rgba(61,90,128,.14)":"none",transition:"all .2s ease-out"},s||{})}>{children}</button>;
 
-const BOX = "https://api.box.com/2.0";
-const BOX_UP = "https://upload.box.com/api/2.0";
+function App(){
+  const[token,setToken]=useState("");const[connected,setConnected]=useState(false);const[connectErr,setConnectErr]=useState("");const[connecting,setConnecting]=useState(false);const[user,setUser]=useState(null);
+  const[agents,setAgents]=useState([]);const[selectedAgent,setSelectedAgent]=useState(null);
+  const[clients,setClients]=useState([]);const[activeClientIdx,setActiveClientIdx]=useState(null);
+  const[expiringFiles,setExpiringFiles]=useState([]);const[candidateFiles,setCandidateFiles]=useState([]);
+  const[selectedExpiring,setSelectedExpiring]=useState(null);const[selectedCandidates,setSelectedCandidates]=useState([]);
+  const[wizardStep,setWizardStep]=useState(0);const[evals,setEvals]=useState([]);const[activeEvalIdx,setActiveEvalIdx]=useState(0);
+  const[expanded,setExpanded]=useState({});const[runProgress,setRunProgress]=useState("");
 
-async function boxGet(token, path) {
-  const r = await fetch(BOX + path, { headers: { Authorization: "Bearer " + token } });
-  if (!r.ok) throw new Error(r.status + " " + r.statusText);
-  return r.json();
-}
-async function boxPost(token, path, body) {
-  const r = await fetch(BOX + path, {
-    method: "POST",
-    headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!r.ok) throw new Error(r.status + " " + r.statusText);
-  return r.json();
-}
-async function boxUpload(token, folderId, fileName, content) {
-  const form = new FormData();
-  form.append("attributes", JSON.stringify({ name: fileName, parent: { id: folderId } }));
-  form.append("file", new Blob([content], { type: "application/json" }), fileName);
-  const r = await fetch(BOX_UP + "/files/content", {
-    method: "POST",
-    headers: { Authorization: "Bearer " + token },
-    body: form,
-  });
-  if (!r.ok) throw new Error(r.status + " " + r.statusText);
-  return r.json();
-}
-
-const EVAL_PROMPT = "Compare the expiring policy against the candidate policy. Evaluate across all seven categories: Coverage Trigger & Time Architecture, Defense Cost Treatment, Limits Architecture, Exclusions, Endorsement Stack, Conditions, and Standard Boilerplate. Output the full evaluation matrix as a single valid JSON object. Every field you evaluate must appear — set diff:true with significance for differences, diff:false with significance:null for matches. Include the verdict, summary, interactions, and all section data. JSON only, no markdown, no prose outside the JSON.";
-
-function normalizeEval(raw) {
-  let data;
-  if (typeof raw === "string") {
-    const match = raw.match(/\{[\s\S]*\}/);
-    if (match) data = JSON.parse(match[0]);
-    else throw new Error("No JSON found in response");
-  } else data = raw;
-  if (data.sections) {
-    data.sections = data.sections.map(function(s) {
-      return Object.assign({}, s, {
-        fields: (s.fields || []).map(function(f) {
-          var exp = typeof f.expiring === "object" && f.expiring !== null ? f.expiring.verbatim || JSON.stringify(f.expiring) : f.expiring;
-          var cand = typeof f.candidate === "object" && f.candidate !== null ? f.candidate.verbatim || JSON.stringify(f.candidate) : f.candidate;
-          var sig = f.significance;
-          if (sig === undefined || sig === null) {
-            if (typeof f.expiring === "object" && f.expiring && f.expiring.significance) sig = f.expiring.significance;
-            if (typeof f.candidate === "object" && f.candidate && f.candidate.significance) sig = f.candidate.significance;
-          }
-          var diff = f.diff !== undefined ? f.diff : exp !== cand;
-          return { field: f.field, expiring: exp, candidate: cand, diff: diff, significance: sig || null };
-        })
-      });
-    });
-  }
-  if (!Array.isArray(data.interactions)) data.interactions = [];
-  return data;
-}
-
-const Tag = ({ children, color, bg }) => (
-  <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color, background: bg, padding: "2px 6px", borderRadius: 3, whiteSpace: "nowrap" }}>{children}</span>
-);
-
-const Btn = ({ children, primary, ghost, disabled, onClick, style: s }) => (
-  <button onClick={disabled ? undefined : onClick} style={Object.assign({
-    padding: "7px 16px", fontSize: 11, fontWeight: 700, fontFamily: DISPLAY, letterSpacing: ".02em",
-    border: ghost ? "1px solid " + C.b1 : "none", borderRadius: 5, cursor: disabled ? "not-allowed" : "pointer",
-    opacity: disabled ? 0.4 : 1, color: primary ? "#fff" : C.t3,
-    background: primary ? "linear-gradient(135deg," + C.ac + "," + C.ac2 + ")" : ghost ? C.card : C.bg2,
-    boxShadow: primary && !disabled ? "0 2px 8px " + C.ac + "33" : "none", transition: "all .15s",
-  }, s || {})}>{children}</button>
-);
-
-function App() {
-  const [token, setToken] = useState("");
-  const [connected, setConnected] = useState(false);
-  const [connectErr, setConnectErr] = useState("");
-  const [connecting, setConnecting] = useState(false);
-  const [user, setUser] = useState(null);
-  const [agents, setAgents] = useState([]);
-  const [selectedAgent, setSelectedAgent] = useState(null);
-  const [folders, setFolders] = useState(null);
-  const [expiringFiles, setExpiringFiles] = useState([]);
-  const [candidateFiles, setCandidateFiles] = useState([]);
-  const [selectedExpiring, setSelectedExpiring] = useState(null);
-  const [selectedCandidates, setSelectedCandidates] = useState([]);
-  const [wizardStep, setWizardStep] = useState(0);
-  const [evals, setEvals] = useState([]);
-  const [activeEvalIdx, setActiveEvalIdx] = useState(0);
-  const [expanded, setExpanded] = useState({});
-  const [runProgress, setRunProgress] = useState("");
-
-  const connect = async () => {
-    setConnecting(true); setConnectErr("");
-    try {
-      const u = await boxGet(token, "/users/me");
-      setUser(u);
-      const root = await boxGet(token, "/folders/0/items?fields=name,type&limit=200");
-      const raFolder = root.entries.find(e => e.type === "folder" && e.name === "Renewal Analyst");
-      if (!raFolder) throw new Error("'Renewal Analyst' folder not found in root");
-      const subs = await boxGet(token, "/folders/" + raFolder.id + "/items?fields=name,type&limit=200");
-      const find = (n) => subs.entries.find(e => e.type === "folder" && e.name === n);
-      const f = {
-        root: raFolder.id,
-        expiring: find("Expiring") && find("Expiring").id,
-        renewalOptions: find("Renewal Options") && find("Renewal Options").id,
-        evaluated: find("Evaluated Renewals") && find("Evaluated Renewals").id,
-        crossCompare: find("Cross Comparisons Reports") && find("Cross Comparisons Reports").id,
-      };
-      if (!f.expiring || !f.renewalOptions) throw new Error("Missing required subfolders (Expiring, Renewal Options)");
-      setFolders(f);
-      const expFiles = await boxGet(token, "/folders/" + f.expiring + "/items?fields=name,type,size,modified_at&limit=200");
-      const candFiles = await boxGet(token, "/folders/" + f.renewalOptions + "/items?fields=name,type,size,modified_at&limit=200");
-      setExpiringFiles(expFiles.entries.filter(e => e.type === "file"));
-      setCandidateFiles(candFiles.entries.filter(e => e.type === "file"));
-      try {
-        const agentRes = await boxGet(token, "/ai_agents");
-        const enabledAgents = (agentRes.entries || []).filter(a => a.access_state === "enabled");
-        setAgents(enabledAgents);
-        const renewalAgent = enabledAgents.find(a => a.name && a.name.toLowerCase().includes("renewal"));
-        if (renewalAgent) setSelectedAgent(renewalAgent.id);
-        else if (enabledAgents.length === 1) setSelectedAgent(enabledAgents[0].id);
-      } catch (agentErr) { console.warn("Could not load AI agents:", agentErr.message); }
-      setConnected(true);
-    } catch (e) { setConnectErr(e.message); }
-    setConnecting(false);
-  };
-
-  const disconnect = () => {
-    setToken(""); setConnected(false); setUser(null); setFolders(null);
-    setExpiringFiles([]); setCandidateFiles([]); setEvals([]);
-    setSelectedExpiring(null); setSelectedCandidates([]); setWizardStep(0);
-    setAgents([]); setSelectedAgent(null);
-  };
-
-  const toggleCandidate = (id) => {
-    setSelectedCandidates(p => p.includes(id) ? p.filter(x => x !== id) : p.concat([id]));
-  };
-
-  const runEvals = async () => {
-    setWizardStep(2); setEvals([]);
-    const newEvals = [];
-    for (let i = 0; i < selectedCandidates.length; i++) {
-      const candId = selectedCandidates[i];
-      const candFile = candidateFiles.find(f => f.id === candId);
-      setRunProgress("Evaluating " + (i + 1) + "/" + selectedCandidates.length + ": " + (candFile ? candFile.name : candId) + "...");
-      try {
-        const body = {
-          mode: "multiple_item_qa",
-          items: [{ id: selectedExpiring, type: "file" }, { id: candId, type: "file" }],
-          prompt: EVAL_PROMPT,
-        };
-        if (selectedAgent) body.ai_agent = { type: "ai_agent_id", id: selectedAgent };
-        const result = await boxPost(token, "/ai/ask", body);
-        let evalData;
-        try { evalData = normalizeEval(result.answer); }
-        catch (pe) { evalData = { raw: result.answer, verdict: "unknown", summary: "Could not parse JSON response. Raw output preserved.", sections: [], interactions: [] }; }
-        newEvals.push({ name: (candFile ? candFile.name.replace(".pdf", "") : "Candidate " + (i + 1)), data: evalData, candidateFileId: candId });
-      } catch (e) {
-        newEvals.push({ name: (candFile ? candFile.name.replace(".pdf", "") : "Candidate " + (i + 1)), data: { error: e.message, verdict: "error", summary: "Eval failed: " + e.message, sections: [], interactions: [] }, candidateFileId: candId });
-      }
+  const connect=async()=>{setConnecting(true);setConnectErr("");try{
+    const u=await boxGet(token,"/users/me");setUser(u);
+    const root=await boxGet(token,"/folders/0/items?fields=name,type&limit=200");
+    const ra=root.entries.find(e=>e.type==="folder"&&e.name==="Renewal Analyst");
+    if(!ra)throw new Error("'Renewal Analyst' folder not found");
+    const cf=await boxGet(token,"/folders/"+ra.id+"/items?fields=name,type&limit=200");
+    const cl=[];
+    for(const c of cf.entries.filter(e=>e.type==="folder")){
+      const subs=await boxGet(token,"/folders/"+c.id+"/items?fields=name,type&limit=200");
+      const find=n=>{const f=subs.entries.find(e=>e.type==="folder"&&e.name===n);return f?f.id:null};
+      cl.push({id:c.id,name:c.name,folders:{expiring:find("Expiring"),renewalOptions:find("Renewal Options"),evaluated:find("Evaluated Renewals"),crossCompare:find("Cross Comparisons Reports")}});
     }
-    setEvals(newEvals); setActiveEvalIdx(0); setWizardStep(3); setRunProgress("");
-  };
+    setClients(cl);
+    try{const ag=await boxGet(token,"/ai_agents");const en=(ag.entries||[]).filter(a=>a.access_state==="enabled");setAgents(en);const rn=en.find(a=>a.name&&a.name.toLowerCase().includes("renewal"));if(rn)setSelectedAgent(rn.id);else if(en.length===1)setSelectedAgent(en[0].id)}catch(e){console.warn("Agents:",e.message)}
+    setConnected(true);if(cl.length>0)doSelectClient(0,cl);
+  }catch(e){setConnectErr(e.message)}setConnecting(false)};
 
-  const saveEval = async (idx) => {
-    const ev = evals[idx];
-    if (!ev || !folders || !folders.evaluated) return;
-    const fileName = "Eval_" + ev.name.replace(/[^a-zA-Z0-9]/g, "_") + "_" + new Date().toISOString().slice(0, 10) + ".json";
-    try {
-      setEvals(p => p.map((e, i) => i === idx ? Object.assign({}, e, { saving: true }) : e));
-      await boxUpload(token, folders.evaluated, fileName, JSON.stringify(ev.data, null, 2));
-      setEvals(p => p.map((e, i) => i === idx ? Object.assign({}, e, { saving: false, saved: true }) : e));
-    } catch (e) {
-      setEvals(p => p.map((e, i) => i === idx ? Object.assign({}, e, { saving: false, saveError: e.message }) : e));
-    }
-  };
+  const doSelectClient=async(idx,list)=>{const cl=(list||clients)[idx];if(!cl)return;setActiveClientIdx(idx);setWizardStep(0);setSelectedExpiring(null);setSelectedCandidates([]);setEvals([]);setExpanded({});
+    try{const[exp,cand]=await Promise.all([cl.folders.expiring?boxGet(token,"/folders/"+cl.folders.expiring+"/items?fields=name,type,modified_at&limit=200"):{entries:[]},cl.folders.renewalOptions?boxGet(token,"/folders/"+cl.folders.renewalOptions+"/items?fields=name,type,modified_at&limit=200"):{entries:[]}]);setExpiringFiles(exp.entries.filter(e=>e.type==="file"));setCandidateFiles(cand.entries.filter(e=>e.type==="file"))}catch(e){setExpiringFiles([]);setCandidateFiles([])}};
 
-  const toggleExpand = (k) => setExpanded(p => { const n = Object.assign({}, p); n[k] = !p[k]; return n; });
-  const verdictColor = (v) => v === "worse" ? C.red : v === "better" ? C.green : v === "error" ? C.t4 : C.amber;
-  const verdictBg = (v) => v === "worse" ? C.rbg : v === "better" ? C.gbg : v === "error" ? C.bg2 : C.abg;
+  const disconnect=()=>{setToken("");setConnected(false);setUser(null);setClients([]);setActiveClientIdx(null);setExpiringFiles([]);setCandidateFiles([]);setEvals([]);setAgents([]);setSelectedAgent(null)};
+  const toggleCandidate=id=>setSelectedCandidates(p=>p.includes(id)?p.filter(x=>x!==id):p.concat([id]));
 
-  const formatDate = (d) => {
-    if (!d) return "";
-    const dt = new Date(d); const now = new Date();
-    const diff = Math.floor((now - dt) / 86400000);
-    if (diff === 0) return "Today";
-    if (diff === 1) return "Yesterday";
-    return diff + "d ago";
-  };
+  const runEvals=async()=>{setWizardStep(2);setEvals([]);const nw=[];
+    for(let i=0;i<selectedCandidates.length;i++){const cid=selectedCandidates[i];const cf=candidateFiles.find(f=>f.id===cid);
+      setRunProgress("Evaluating "+(i+1)+"/"+selectedCandidates.length+": "+(cf?cf.name:cid));
+      try{const body={mode:"multiple_item_qa",items:[{id:selectedExpiring,type:"file"},{id:cid,type:"file"}],prompt:EVAL_PROMPT};if(selectedAgent)body.ai_agent={type:"ai_agent_id",id:selectedAgent};
+        const res=await boxPost(token,"/ai/ask",body);let ed;try{ed=normalizeEval(res.answer)}catch(pe){ed={raw:res.answer,verdict:"unknown",summary:"JSON parse failed.",sections:[],interactions:[]}}
+        nw.push({name:(cf?cf.name.replace(".pdf",""):"Candidate "+(i+1)),data:ed,candidateFileId:cid})
+      }catch(e){nw.push({name:(cf?cf.name.replace(".pdf",""):"Candidate "+(i+1)),data:{error:e.message,verdict:"error",summary:"Failed: "+e.message,sections:[],interactions:[]},candidateFileId:cid})}}
+    setEvals(nw);setActiveEvalIdx(0);setWizardStep(3);setRunProgress("")};
 
-  const renderSection = (sec, evalKey) => {
-    const k = evalKey + "-" + sec.num;
-    const isOpen = expanded[k];
-    const fields = sec.fields || [];
-    const hasDiffs = fields.some(f => f.diff);
-    const diffCount = fields.filter(f => f.diff).length;
-    return (
-      <div key={sec.num} style={{ background: C.card, border: "1px solid " + C.b1, borderRadius: 6, marginBottom: 5, overflow: "hidden" }}>
-        <div onClick={() => toggleExpand(k)} style={{ padding: "9px 14px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none" }}>
-          <span style={{ fontFamily: MONO, fontSize: 9, color: C.t4, width: 14 }}>{sec.num}</span>
-          <span style={{ fontSize: 11, fontWeight: 600, flex: 1 }}>{sec.name}</span>
-          {sec.expiringPages && <span style={{ fontSize: 9, color: C.t4, fontFamily: MONO }}>{sec.expiringPages} / {sec.candidatePages}</span>}
-          {hasDiffs ? <Tag color={C.amber} bg={C.abg}>{diffCount} diff{diffCount > 1 ? "s" : ""}</Tag> : <span style={{ fontSize: 9, color: C.green, fontWeight: 600 }}>no material differences</span>}
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.t4} strokeWidth="2" style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0)", transition: "transform .2s", flexShrink: 0 }}><polyline points="6 9 12 15 18 9" /></svg>
-        </div>
-        {isOpen && fields.length > 0 && (
-          <div style={{ borderTop: "1px solid " + C.b1 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "140px 1fr 1fr", padding: "6px 14px 4px", paddingLeft: 36, background: "#fcfbf9" }}>
-              <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: C.t4 }}>Field</span>
-              <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: C.ac }}>Expiring</span>
-              <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: C.green }}>Candidate</span>
-            </div>
-            {fields.map((d, di) => (
-              <div key={di} style={{ display: "grid", gridTemplateColumns: "140px 1fr 1fr", padding: "8px 14px", paddingLeft: 36, borderTop: di > 0 ? "1px solid " + C.b1 + "22" : "none", background: d.diff ? "#fffdf5" : di % 2 === 0 ? "transparent" : "#fcfbf9" }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: C.t1 }}>{d.field}</div>
-                <div style={{ fontSize: 11, color: C.t2, lineHeight: 1.5, paddingRight: 12 }}>{String(d.expiring || "")}</div>
-                <div>
-                  <div style={{ fontSize: 11, color: d.diff ? C.t1 : C.t2, fontWeight: d.diff ? 600 : 400, lineHeight: 1.5, borderLeft: d.diff ? "2px solid " + C.red : "none", paddingLeft: d.diff ? 10 : 0 }}>{String(d.candidate || "")}</div>
-                  {d.diff && d.significance && <div style={{ fontSize: 10, color: C.t3, lineHeight: 1.45, marginTop: 4, paddingLeft: d.diff ? 10 : 0 }}>{d.significance}</div>}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+  const saveEval=async idx=>{const ev=evals[idx];const cl=clients[activeClientIdx];if(!ev||!cl||!cl.folders.evaluated)return;
+    const fn="Eval_"+ev.name.replace(/[^a-zA-Z0-9]/g,"_")+"_"+new Date().toISOString().slice(0,10)+".json";
+    try{setEvals(p=>p.map((e,i)=>i===idx?Object.assign({},e,{saving:true}):e));await boxUpload(token,cl.folders.evaluated,fn,JSON.stringify(ev.data,null,2));
+      setEvals(p=>p.map((e,i)=>i===idx?Object.assign({},e,{saving:false,saved:true}):e))}catch(e){setEvals(p=>p.map((e2,i)=>i===idx?Object.assign({},e2,{saving:false}):e2))}};
+
+  const toggleExpand=k=>setExpanded(p=>{const n=Object.assign({},p);n[k]=!p[k];return n});
+  const vc=v=>v==="worse"?C.red:v==="better"?C.green:v==="error"?C.t4:C.amber;
+  const vb=v=>v==="worse"?C.rbg:v==="better"?C.gbg:v==="error"?C.bg2:C.abg;
+  const fd=d=>{if(!d)return"";const x=Math.floor((new Date()-new Date(d))/864e5);return x===0?"Today":x===1?"Yesterday":x+"d ago"};
+  const ac=activeClientIdx!==null?clients[activeClientIdx]:null;
+
+  const renderSec=(sec,ek)=>{const k=ek+"-"+sec.num;const io=expanded[k];const flds=sec.fields||[];const hd=flds.some(f=>f.diff);const dc=flds.filter(f=>f.diff).length;
+    return <div key={sec.num} style={{background:C.card,border:"1px solid "+C.b1,borderRadius:8,marginBottom:6,overflow:"hidden"}}>
+      <div onClick={()=>toggleExpand(k)} style={{padding:"11px 16px",display:"flex",alignItems:"center",gap:10,cursor:"pointer",userSelect:"none"}}>
+        <span style={{fontFamily:MONO,fontSize:10,color:C.t4,width:16}}>{sec.num}</span>
+        <span style={{fontSize:13,fontWeight:600,flex:1,color:C.t1}}>{sec.name}</span>
+        {sec.expiringPages&&<span style={{fontSize:10,color:C.t4,fontFamily:MONO}}>{sec.expiringPages} / {sec.candidatePages}</span>}
+        {hd?<Tag color={C.amber} bg={C.abg}>{dc} diff{dc>1?"s":""}</Tag>:<span style={{fontSize:10,color:C.green,fontWeight:600}}>no material differences</span>}
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.t4} strokeWidth="2" style={{transform:io?"rotate(180deg)":"rotate(0)",transition:"transform .2s",flexShrink:0}}><polyline points="6 9 12 15 18 9"/></svg>
       </div>
-    );
-  };
-
-  return (
-    <div style={{ fontFamily: FONT, background: C.bg, height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-      {/* Topbar */}
-      <div style={{ background: "#1a1816", padding: "0 16px", height: 44, display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-        <div style={{ width: 22, height: 22, borderRadius: 5, background: "linear-gradient(135deg," + C.ac + "," + C.ac2 + ")", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><path d="M9 12h6m-3-3v6" /><rect x="3" y="3" width="18" height="18" rx="3" /></svg>
+      {io&&flds.length>0&&<div style={{borderTop:"1px solid "+C.b1}}>
+        <div style={{display:"grid",gridTemplateColumns:"150px 1fr 1fr",padding:"8px 16px 6px",paddingLeft:42,background:C.bg}}>
+          <span style={{fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:".05em",color:C.t4}}>Field</span>
+          <span style={{fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:".05em",color:C.pri}}>Expiring</span>
+          <span style={{fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:".05em",color:C.acc2}}>Candidate</span>
         </div>
-        <span style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 12, color: "#fff", letterSpacing: ".04em", textTransform: "uppercase" }}>Renewal Analyst</span>
-        <div style={{ flex: 1 }} />
-        {connected && (
-          <React.Fragment>
-            <span style={{ fontSize: 10, color: "rgba(255,255,255,.3)", fontFamily: MONO }}>{user && user.name}</span>
-            <button onClick={disconnect} style={{ fontSize: 10, color: "rgba(255,255,255,.3)", background: "transparent", border: "1px solid rgba(255,255,255,.1)", borderRadius: 4, padding: "3px 8px", cursor: "pointer", fontFamily: FONT }}>Disconnect</button>
-          </React.Fragment>
-        )}
+        {flds.map((d,di)=><div key={di} style={{display:"grid",gridTemplateColumns:"150px 1fr 1fr",padding:"10px 16px",paddingLeft:42,borderTop:di>0?"1px solid "+C.b1+"44":"none",background:d.diff?"#FFFCF5":"transparent"}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.t1}}>{d.field}</div>
+          <div style={{fontSize:12,color:C.t2,lineHeight:1.55,paddingRight:14}}>{String(d.expiring||"")}</div>
+          <div><div style={{fontSize:12,color:d.diff?C.t1:C.t2,fontWeight:d.diff?600:400,lineHeight:1.55,borderLeft:d.diff?"2px solid "+C.red:"none",paddingLeft:d.diff?12:0}}>{String(d.candidate||"")}</div>
+            {d.diff&&d.significance&&<div style={{fontSize:11,color:C.t3,lineHeight:1.5,marginTop:4,paddingLeft:d.diff?12:0}}>{d.significance}</div>}</div>
+        </div>)}
+      </div>}
+    </div>};
+
+  return <div style={{fontFamily:FONT,background:C.bg,height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    {/* Topbar */}
+    <div style={{background:C.topbar,padding:"0 20px",height:48,display:"flex",alignItems:"center",gap:12,flexShrink:0}}>
+      <div style={{display:"flex",alignItems:"center",gap:10}}>
+        <div style={{width:26,height:26,borderRadius:6,background:C.pri,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+        </div>
+        <span style={{fontWeight:700,fontSize:14,color:"#fff",letterSpacing:".01em"}}>CityCenter</span>
+        <span style={{fontSize:11,color:"rgba(255,255,255,.3)",fontWeight:400}}>Renewal Analyst</span>
       </div>
-      <div style={{ height: 2, background: "linear-gradient(90deg,transparent," + C.ac + " 30%," + C.ac2 + " 70%,transparent)", opacity: 0.4, flexShrink: 0 }} />
-
-      {/* Connect Screen */}
-      {!connected && (
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: C.card, border: "1px solid " + C.b1, borderRadius: 10, padding: 28, width: 380, textAlign: "center", boxShadow: "0 4px 20px rgba(0,0,0,.06)" }}>
-            <div style={{ fontFamily: DISPLAY, fontSize: 18, fontWeight: 700, marginBottom: 4 }}>Connect to Box</div>
-            <div style={{ fontSize: 11, color: C.t3, marginBottom: 18 }}>Enter your developer token to access the Renewal Analyst workspace</div>
-            <input value={token} onChange={e => setToken(e.target.value)} onKeyDown={e => e.key === "Enter" && connect()}
-              type="text" placeholder="Paste developer token..."
-              style={{ width: "100%", padding: "10px 12px", fontSize: 12, fontFamily: MONO, border: "1px solid " + C.b1, borderRadius: 6, background: C.bg, color: C.t1, marginBottom: 10 }} />
-            <Btn primary disabled={!token.trim() || connecting} onClick={connect} style={{ width: "100%" }}>
-              {connecting ? "Connecting..." : "Connect"}
-            </Btn>
-            {connectErr && <div style={{ fontSize: 11, color: C.red, marginTop: 8 }}>{connectErr}</div>}
-          </div>
-        </div>
-      )}
-
-      {/* Connected */}
-      {connected && (
-        <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
-          {/* Sidebar */}
-          <div style={{ width: 240, background: C.bg2, borderRight: "1px solid " + C.b1, display: "flex", flexDirection: "column", flexShrink: 0 }}>
-            <div style={{ padding: "12px 14px", borderBottom: "1px solid " + C.b1 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.green }} />
-                <span style={{ fontSize: 10, fontWeight: 600, color: C.t2 }}>Connected to Box</span>
-              </div>
-              <div style={{ fontSize: 9, color: C.t4, fontFamily: MONO }}>
-                Expiring: {expiringFiles.length} files · Options: {candidateFiles.length} files
-              </div>
-            </div>
-            {agents.length > 0 && (
-              <div style={{ padding: "10px 14px", borderBottom: "1px solid " + C.b1 }}>
-                <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: C.t4, marginBottom: 6 }}>AI Agent</div>
-                <select value={selectedAgent || ""} onChange={e => setSelectedAgent(e.target.value || null)}
-                  style={{ width: "100%", padding: "6px 8px", fontSize: 10, fontFamily: FONT, border: "1px solid " + C.b1, borderRadius: 5, background: C.card, color: C.t1, cursor: "pointer" }}>
-                  <option value="">No agent (raw prompt)</option>
-                  {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                </select>
-              </div>
-            )}
-            <div style={{ flex: 1, overflow: "auto", padding: "10px 8px" }}>
-              <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: C.t4, marginBottom: 8, paddingLeft: 6 }}>Evaluations</div>
-              {evals.length === 0 ? (
-                <div style={{ fontSize: 10, color: C.t4, fontStyle: "italic", padding: "8px 6px" }}>No evals yet — run the wizard</div>
-              ) : evals.map((ev, i) => (
-                <div key={i} onClick={() => { setActiveEvalIdx(i); if (wizardStep < 3) setWizardStep(3); }}
-                  style={{ padding: "8px 8px", borderRadius: 6, marginBottom: 3, cursor: "pointer",
-                    background: activeEvalIdx === i && wizardStep === 3 ? C.card : "transparent",
-                    border: "1px solid " + (activeEvalIdx === i && wizardStep === 3 ? C.b1 : "transparent"), transition: "all .12s" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: verdictColor(ev.data.verdict), flexShrink: 0 }} />
-                    <span style={{ fontSize: 10, fontWeight: activeEvalIdx === i ? 700 : 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ev.name}</span>
-                  </div>
-                  <div style={{ display: "flex", gap: 4, marginLeft: 12 }}>
-                    {ev.data.verdict && <Tag color={verdictColor(ev.data.verdict)} bg={verdictBg(ev.data.verdict)}>{ev.data.verdict}</Tag>}
-                    {ev.saved && <Tag color={C.green} bg={C.gbg}>saved</Tag>}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div style={{ padding: "8px 12px", borderTop: "1px solid " + C.b1 }}>
-              <Btn ghost onClick={() => { setWizardStep(0); setSelectedExpiring(null); setSelectedCandidates([]); setExpanded({}); }} style={{ width: "100%", textAlign: "center", fontSize: 10 }}>
-                {evals.length > 0 ? "New Eval" : "Start Eval"}
-              </Btn>
-            </div>
-          </div>
-
-          {/* Main */}
-          <div style={{ flex: 1, overflow: "auto" }}>
-            {/* Wizard 0: Expiring */}
-            {wizardStep === 0 && (
-              <div style={{ padding: 24, display: "flex", justifyContent: "center", animation: "fadeIn .3s ease-out" }}>
-                <div style={{ background: C.card, border: "1px solid " + C.b1, borderRadius: 10, padding: 22, width: 440 }}>
-                  <div style={{ fontFamily: DISPLAY, fontSize: 15, fontWeight: 700, marginBottom: 3 }}>Select the expiring policy</div>
-                  <div style={{ fontSize: 11, color: C.t3, marginBottom: 14 }}>From your Box "Expiring" folder</div>
-                  {expiringFiles.length === 0 ? (
-                    <div style={{ padding: 20, textAlign: "center", color: C.t4, fontSize: 11 }}>No files in the Expiring folder.</div>
-                  ) : expiringFiles.map(f => (
-                    <div key={f.id} onClick={() => setSelectedExpiring(f.id)}
-                      style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 11px", borderRadius: 6, marginBottom: 4, cursor: "pointer",
-                        background: selectedExpiring === f.id ? C.acs : "transparent",
-                        border: "1.5px solid " + (selectedExpiring === f.id ? C.ac : C.b1), transition: "all .12s" }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={selectedExpiring === f.id ? C.ac : C.t4} strokeWidth="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 11, fontWeight: selectedExpiring === f.id ? 600 : 400 }}>{f.name}</div>
-                        <div style={{ fontSize: 9, color: C.t4 }}>{formatDate(f.modified_at)}</div>
-                      </div>
-                      {selectedExpiring === f.id && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.ac} strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>}
-                    </div>
-                  ))}
-                  <div style={{ marginTop: 14, display: "flex", justifyContent: "flex-end" }}>
-                    <Btn primary disabled={!selectedExpiring} onClick={() => setWizardStep(1)}>Set Expiring & Continue</Btn>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Wizard 1: Candidates */}
-            {wizardStep === 1 && (
-              <div style={{ padding: 24, display: "flex", justifyContent: "center", animation: "fadeIn .3s ease-out" }}>
-                <div style={{ background: C.card, border: "1px solid " + C.b1, borderRadius: 10, padding: 22, width: 440 }}>
-                  <div style={{ fontFamily: DISPLAY, fontSize: 15, fontWeight: 700, marginBottom: 3 }}>Select candidates to evaluate</div>
-                  <div style={{ fontSize: 11, color: C.t3, marginBottom: 14 }}>From your Box "Renewal Options" folder</div>
-                  {candidateFiles.length === 0 ? (
-                    <div style={{ padding: 20, textAlign: "center", color: C.t4, fontSize: 11 }}>No files in Renewal Options folder.</div>
-                  ) : candidateFiles.map(f => (
-                    <div key={f.id} onClick={() => toggleCandidate(f.id)}
-                      style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 11px", borderRadius: 6, marginBottom: 4, cursor: "pointer",
-                        background: selectedCandidates.includes(f.id) ? C.acs : "transparent",
-                        border: "1.5px solid " + (selectedCandidates.includes(f.id) ? C.ac : C.b1), transition: "all .12s" }}>
-                      <div style={{ width: 16, height: 16, borderRadius: 4, border: "2px solid " + (selectedCandidates.includes(f.id) ? C.ac : C.b2),
-                        background: selectedCandidates.includes(f.id) ? C.ac : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        {selectedCandidates.includes(f.id) && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 11, fontWeight: selectedCandidates.includes(f.id) ? 600 : 400 }}>{f.name}</div>
-                        <div style={{ fontSize: 9, color: C.t4 }}>{formatDate(f.modified_at)}</div>
-                      </div>
-                    </div>
-                  ))}
-                  <div style={{ marginTop: 14, display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                    <Btn ghost onClick={() => setWizardStep(0)}>Back</Btn>
-                    <Btn primary disabled={selectedCandidates.length === 0} onClick={runEvals}>
-                      {selectedCandidates.length > 1 ? "Evaluate " + selectedCandidates.length + " Candidates" : selectedCandidates.length === 1 ? "Evaluate" : "Select files"}
-                    </Btn>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Wizard 2: Running */}
-            {wizardStep === 2 && (
-              <div style={{ padding: 24, display: "flex", alignItems: "center", justifyContent: "center", height: "100%", animation: "fadeIn .3s ease-out" }}>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ width: 36, height: 36, borderRadius: "50%", border: "3px solid " + C.b2, borderTopColor: C.ac, animation: "spin 1s linear infinite", margin: "0 auto 16px" }} />
-                  <div style={{ fontFamily: DISPLAY, fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Evaluating via Box AI...</div>
-                  <div style={{ fontSize: 11, color: C.t3, marginBottom: 8 }}>{runProgress}</div>
-                  <div style={{ fontSize: 10, color: C.t4 }}>Comparing against expiring · Full 7-section analysis · Interactions · Verdict</div>
-                </div>
-              </div>
-            )}
-
-            {/* Wizard 3: Results */}
-            {wizardStep === 3 && evals[activeEvalIdx] && (() => {
-              const ev = evals[activeEvalIdx];
-              const d = ev.data;
-              if (d.error || d.raw) {
-                return (
-                  <div style={{ padding: 20 }}>
-                    <div style={{ fontFamily: DISPLAY, fontSize: 15, fontWeight: 700, marginBottom: 8 }}>{ev.name}</div>
-                    <div style={{ background: d.error ? C.rbg : C.bg2, border: "1px solid " + C.b1, borderRadius: 6, padding: 14 }}>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: d.error ? C.red : C.t2, marginBottom: 6 }}>{d.error ? "Error" : "Raw Response"}</div>
-                      <pre style={{ fontSize: 10, fontFamily: MONO, color: C.t2, whiteSpace: "pre-wrap", lineHeight: 1.5 }}>{d.error || d.raw}</pre>
-                    </div>
-                  </div>
-                );
-              }
-              return (
-                <div style={{ padding: 20, animation: "fadeIn .25s ease-out" }}>
-                  {/* Identity */}
-                  <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
-                    {[{ label: "Expiring", data: d.expiring, color: C.ac, bg: C.acs },
-                      { label: "Candidate", data: d.candidate, color: C.green, bg: C.gbg }].map((side, i) => (
-                      <div key={i} style={{ flex: 1, background: C.card, border: "1px solid " + C.b1, borderRadius: 8, padding: "10px 14px", borderTop: "3px solid " + side.color }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                          <Tag color={side.color} bg={side.bg}>{side.label}</Tag>
-                          {i === 1 && d.verdict && <Tag color={verdictColor(d.verdict)} bg={verdictBg(d.verdict)}>{d.verdict}</Tag>}
-                        </div>
-                        {side.data ? (
-                          <React.Fragment>
-                            <div style={{ fontSize: 12, fontWeight: 600 }}>{side.data.carrier || side.data.insured || "Unknown"}</div>
-                            {side.data.policyNumber && <div style={{ fontSize: 10, color: C.t3, fontFamily: MONO, marginTop: 3 }}>{side.data.policyNumber}</div>}
-                            <div style={{ fontSize: 10, color: C.t3, marginTop: 2 }}>{side.data.period} · <strong style={{ color: C.t1 }}>{side.data.premium}</strong></div>
-                          </React.Fragment>
-                        ) : <div style={{ fontSize: 11, color: C.t4 }}>Identity not parsed</div>}
-                      </div>
-                    ))}
-                  </div>
-                  {d.premiumDelta && <div style={{ fontSize: 10, color: C.t3, textAlign: "right", marginTop: -8, marginBottom: 10, fontFamily: MONO }}>Δ {d.premiumDelta}</div>}
-
-                  {/* Summary */}
-                  {d.summary && (
-                    <div style={{ background: verdictBg(d.verdict), border: "1px solid " + verdictColor(d.verdict) + "22", borderLeft: "3px solid " + verdictColor(d.verdict), borderRadius: 6, padding: "12px 14px", marginBottom: 14 }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: verdictColor(d.verdict), marginBottom: 4 }}>Evaluation Report Summary</div>
-                      <div style={{ fontSize: 11, color: C.t1, lineHeight: 1.55 }}>{d.summary}</div>
-                    </div>
-                  )}
-
-                  {/* Sections */}
-                  {(d.sections || []).map(sec => renderSection(sec, "eval-" + activeEvalIdx))}
-
-                  {/* Interactions */}
-                  {(d.interactions || []).length > 0 && (
-                    <div style={{ background: C.card, border: "1px solid " + C.b1, borderRadius: 6, marginTop: 10, overflow: "hidden" }}>
-                      <div onClick={() => toggleExpand("eval-" + activeEvalIdx + "-ix")}
-                        style={{ padding: "9px 14px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer",
-                          borderBottom: expanded["eval-" + activeEvalIdx + "-ix"] ? "1px solid " + C.b1 : "none" }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.ac} strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>
-                        <span style={{ fontFamily: DISPLAY, fontSize: 11, fontWeight: 700, flex: 1 }}>Interactions</span>
-                        <span style={{ fontSize: 9, color: C.t4 }}>{d.interactions.length} compound effects</span>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.t4} strokeWidth="2"
-                          style={{ transform: expanded["eval-" + activeEvalIdx + "-ix"] ? "rotate(180deg)" : "rotate(0)", transition: "transform .2s" }}>
-                          <polyline points="6 9 12 15 18 9" /></svg>
-                      </div>
-                      {expanded["eval-" + activeEvalIdx + "-ix"] && (
-                        <div style={{ padding: "6px 14px 10px" }}>
-                          {d.interactions.map((ix, i) => (
-                            <div key={i} style={{ display: "flex", gap: 10, padding: "7px 0",
-                              borderBottom: i < d.interactions.length - 1 ? "1px solid " + C.b1 + "22" : "none", alignItems: "flex-start" }}>
-                              <span style={{ fontFamily: MONO, fontSize: 9, color: C.ac, background: C.acs, padding: "2px 5px", borderRadius: 3, flexShrink: 0, marginTop: 1 }}>{ix.sections}</span>
-                              <div>
-                                <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 1 }}>{ix.name}</div>
-                                <div style={{ fontSize: 10, color: C.t3, lineHeight: 1.45 }}>{ix.effect}</div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-                    <Btn primary disabled={ev.saving || ev.saved} onClick={() => saveEval(activeEvalIdx)} style={{ fontSize: 11 }}>
-                      {ev.saved ? "Saved to Box" : ev.saving ? "Saving..." : "Save to Evaluated Renewals"}
-                    </Btn>
-                    <Btn ghost style={{ fontSize: 11 }} onClick={() => { setWizardStep(1); setSelectedCandidates([]); }}>+ Add Candidate</Btn>
-                  </div>
-                </div>
-              );
-            })()}
-
-            {wizardStep === 3 && evals.length === 0 && (
-              <div style={{ padding: 40, textAlign: "center", color: C.t4 }}>
-                <div style={{ fontSize: 13, fontWeight: 500 }}>No results to display</div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <div style={{flex:1}}/>
+      {connected&&<React.Fragment>
+        <span style={{fontSize:11,color:"rgba(255,255,255,.3)",fontFamily:MONO}}>{user&&user.name}</span>
+        <button onClick={disconnect} style={{fontSize:10,color:"rgba(255,255,255,.35)",background:"transparent",border:"1px solid rgba(255,255,255,.1)",borderRadius:5,padding:"4px 10px",cursor:"pointer",fontFamily:FONT,fontWeight:500}}>Disconnect</button>
+      </React.Fragment>}
     </div>
-  );
-}
+    <div style={{height:2,background:"linear-gradient(90deg,transparent,"+C.pri+" 25%,"+C.acc+" 75%,transparent)",opacity:.3,flexShrink:0}}/>
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    {/* Connect */}
+    {!connected&&<div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <div style={{background:C.card,border:"1px solid "+C.b1,borderRadius:12,padding:32,width:400,textAlign:"center",boxShadow:"0 4px 24px rgba(0,0,0,.04)"}}>
+        <div style={{width:40,height:40,borderRadius:8,background:C.pri,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+        </div>
+        <div style={{fontSize:20,fontWeight:700,color:C.t1,marginBottom:4}}>CityCenter</div>
+        <div style={{fontSize:12,color:C.t3,marginBottom:24}}>Connect to Box to access your renewal workspaces</div>
+        <input value={token} onChange={e=>setToken(e.target.value)} onKeyDown={e=>e.key==="Enter"&&connect()} type="text" placeholder="Paste your Box developer token..."
+          style={{width:"100%",padding:"11px 14px",fontSize:13,fontFamily:MONO,border:"1px solid "+C.b1,borderRadius:8,background:C.bg,color:C.t1,marginBottom:12}}/>
+        <Btn primary disabled={!token.trim()||connecting} onClick={connect} style={{width:"100%",padding:"10px 18px",fontSize:13}}>
+          {connecting?"Connecting...":"Connect to Box"}</Btn>
+        {connectErr&&<div style={{fontSize:12,color:C.red,marginTop:10}}>{connectErr}</div>}
+        <div style={{fontSize:10,color:C.t4,marginTop:16}}>Powered by Box AI</div>
+      </div>
+    </div>}
+
+    {/* Connected */}
+    {connected&&<div style={{flex:1,display:"flex",minHeight:0}}>
+      {/* Sidebar */}
+      <div style={{width:260,background:C.card,borderRight:"1px solid "+C.b1,display:"flex",flexDirection:"column",flexShrink:0}}>
+        {agents.length>0&&<div style={{padding:"14px 16px",borderBottom:"1px solid "+C.b1}}>
+          <div style={{fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:".05em",color:C.t4,marginBottom:6}}>AI Agent</div>
+          <select value={selectedAgent||""} onChange={e=>setSelectedAgent(e.target.value||null)}
+            style={{width:"100%",padding:"7px 28px 7px 10px",fontSize:12,fontFamily:FONT,border:"1px solid "+C.b1,borderRadius:6,background:C.bg,color:C.t1,cursor:"pointer"}}>
+            <option value="">Default (raw prompt)</option>
+            {agents.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}
+          </select>
+        </div>}
+        <div style={{padding:"14px 12px 8px"}}><div style={{fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:".05em",color:C.t4,paddingLeft:6}}>Clients</div></div>
+        <div style={{flex:1,overflow:"auto",padding:"0 10px"}}>
+          {clients.length===0&&<div style={{fontSize:12,color:C.t4,padding:"12px 6px",fontStyle:"italic"}}>No client folders found</div>}
+          {clients.map((cl,i)=>{const active=i===activeClientIdx;
+            return <div key={cl.id} onClick={()=>doSelectClient(i)} style={{padding:"12px 12px",borderRadius:8,marginBottom:4,cursor:"pointer",transition:"all .15s",background:active?C.pris:"transparent",border:"1px solid "+(active?C.pri+"22":"transparent")}}>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <div style={{width:32,height:32,borderRadius:8,background:active?C.pri:C.bg2,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .15s"}}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={active?"#fff":C.t4} strokeWidth="1.5"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+                </div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:active?700:500,color:active?C.pri:C.t1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{cl.name}</div>
+                  <div style={{fontSize:10,color:C.t4,marginTop:1}}>{cl.folders.expiring&&cl.folders.renewalOptions?"Ready":"Setup needed"}</div>
+                </div>
+              </div>
+            </div>})}
+        </div>
+        <div style={{padding:"10px 16px",borderTop:"1px solid "+C.b1}}>
+          <div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:6,height:6,borderRadius:"50%",background:C.green}}/><span style={{fontSize:10,color:C.t3}}>Connected · {clients.length} client{clients.length!==1?"s":""}</span></div>
+        </div>
+      </div>
+
+      {/* Main */}
+      <div style={{flex:1,display:"flex",flexDirection:"column",minHeight:0}}>
+        {ac&&<div style={{padding:"14px 24px",borderBottom:"1px solid "+C.b1,background:C.card,display:"flex",alignItems:"center",gap:14,flexShrink:0}}>
+          <div><div style={{fontSize:18,fontWeight:700,color:C.t1}}>{ac.name}</div>
+            <div style={{fontSize:11,color:C.t4,marginTop:2}}>{expiringFiles.length} expiring · {candidateFiles.length} candidate{candidateFiles.length!==1?"s":""}{evals.length>0&&" · "+evals.length+" eval"+(evals.length!==1?"s":"")}</div></div>
+          <div style={{flex:1}}/>
+          {evals.length>0&&<div style={{display:"flex",gap:4}}>{evals.map((ev,i)=><button key={i} onClick={()=>{setActiveEvalIdx(i);setWizardStep(3)}}
+            style={{padding:"5px 12px",fontSize:11,fontWeight:wizardStep===3&&activeEvalIdx===i?700:500,color:wizardStep===3&&activeEvalIdx===i?C.pri:C.t3,background:wizardStep===3&&activeEvalIdx===i?C.pris:"transparent",border:"1px solid "+(wizardStep===3&&activeEvalIdx===i?C.pri+"33":C.b1),borderRadius:6,cursor:"pointer",fontFamily:FONT,display:"flex",alignItems:"center",gap:5,transition:"all .15s"}}>
+            <div style={{width:6,height:6,borderRadius:"50%",background:vc(ev.data.verdict)}}/>{ev.name.length>20?ev.name.slice(0,20)+"…":ev.name}
+          </button>)}</div>}
+        </div>}
+
+        <div style={{flex:1,overflow:"auto"}}>
+          {!ac&&<div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:C.t4,fontSize:13}}>Select a client from the sidebar</div>}
+
+          {/* W0 */}
+          {ac&&wizardStep===0&&<div style={{padding:28,display:"flex",justifyContent:"center",animation:"fadeIn .3s ease-out"}}>
+            <div style={{background:C.card,border:"1px solid "+C.b1,borderRadius:12,padding:24,width:460,boxShadow:"0 2px 12px rgba(0,0,0,.03)"}}>
+              <div style={{fontSize:17,fontWeight:700,color:C.t1,marginBottom:4}}>Select the expiring policy</div>
+              <div style={{fontSize:12,color:C.t3,marginBottom:18}}>From <span style={{fontFamily:MONO,fontSize:11}}>{ac.name}/Expiring</span></div>
+              {expiringFiles.length===0?<div style={{padding:24,textAlign:"center",color:C.t4,fontSize:12,background:C.bg,borderRadius:8}}>No files found. Upload to Box.</div>
+              :expiringFiles.map(f=><div key={f.id} onClick={()=>setSelectedExpiring(f.id)} style={{display:"flex",alignItems:"center",gap:12,padding:"11px 14px",borderRadius:8,marginBottom:5,cursor:"pointer",background:selectedExpiring===f.id?C.pris:"transparent",border:"1.5px solid "+(selectedExpiring===f.id?C.pri:C.b1),transition:"all .15s"}}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={selectedExpiring===f.id?C.pri:C.t4} strokeWidth="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <div style={{flex:1}}><div style={{fontSize:13,fontWeight:selectedExpiring===f.id?600:400,color:C.t1}}>{f.name}</div><div style={{fontSize:10,color:C.t4}}>{fd(f.modified_at)}</div></div>
+                {selectedExpiring===f.id&&<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.pri} strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>}
+              </div>)}
+              <div style={{marginTop:18,display:"flex",justifyContent:"flex-end"}}><Btn primary disabled={!selectedExpiring} onClick={()=>setWizardStep(1)}>Continue</Btn></div>
+            </div>
+          </div>}
+
+          {/* W1 */}
+          {ac&&wizardStep===1&&<div style={{padding:28,display:"flex",justifyContent:"center",animation:"fadeIn .3s ease-out"}}>
+            <div style={{background:C.card,border:"1px solid "+C.b1,borderRadius:12,padding:24,width:460,boxShadow:"0 2px 12px rgba(0,0,0,.03)"}}>
+              <div style={{fontSize:17,fontWeight:700,color:C.t1,marginBottom:4}}>Select candidates</div>
+              <div style={{fontSize:12,color:C.t3,marginBottom:18}}>From <span style={{fontFamily:MONO,fontSize:11}}>{ac.name}/Renewal Options</span></div>
+              {candidateFiles.length===0?<div style={{padding:24,textAlign:"center",color:C.t4,fontSize:12,background:C.bg,borderRadius:8}}>No files found.</div>
+              :candidateFiles.map(f=><div key={f.id} onClick={()=>toggleCandidate(f.id)} style={{display:"flex",alignItems:"center",gap:12,padding:"11px 14px",borderRadius:8,marginBottom:5,cursor:"pointer",background:selectedCandidates.includes(f.id)?C.pris:"transparent",border:"1.5px solid "+(selectedCandidates.includes(f.id)?C.pri:C.b1),transition:"all .15s"}}>
+                <div style={{width:18,height:18,borderRadius:5,border:"2px solid "+(selectedCandidates.includes(f.id)?C.pri:C.b2),background:selectedCandidates.includes(f.id)?C.pri:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  {selectedCandidates.includes(f.id)&&<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}</div>
+                <div style={{flex:1}}><div style={{fontSize:13,fontWeight:selectedCandidates.includes(f.id)?600:400,color:C.t1}}>{f.name}</div><div style={{fontSize:10,color:C.t4}}>{fd(f.modified_at)}</div></div>
+              </div>)}
+              <div style={{marginTop:18,display:"flex",gap:8,justifyContent:"flex-end"}}>
+                <Btn ghost onClick={()=>setWizardStep(0)}>Back</Btn>
+                <Btn primary disabled={selectedCandidates.length===0} onClick={runEvals}>{selectedCandidates.length>1?"Evaluate "+selectedCandidates.length+" Candidates":selectedCandidates.length===1?"Evaluate":"Select files"}</Btn>
+              </div>
+            </div>
+          </div>}
+
+          {/* W2 */}
+          {ac&&wizardStep===2&&<div style={{padding:28,display:"flex",alignItems:"center",justifyContent:"center",height:"100%",animation:"fadeIn .3s ease-out"}}>
+            <div style={{textAlign:"center",maxWidth:360}}>
+              <div style={{width:40,height:40,borderRadius:"50%",border:"3px solid "+C.b2,borderTopColor:C.pri,animation:"spin 1s linear infinite",margin:"0 auto 20px"}}/>
+              <div style={{fontSize:16,fontWeight:700,color:C.t1,marginBottom:6}}>Analyzing policies...</div>
+              <div style={{fontSize:12,color:C.t3,marginBottom:6}}>{runProgress}</div>
+              <div style={{fontSize:11,color:C.t4}}>Full 7-section comparison · Interactions · Verdict</div>
+            </div>
+          </div>}
+
+          {/* W3 */}
+          {ac&&wizardStep===3&&evals[activeEvalIdx]&&(()=>{const ev=evals[activeEvalIdx];const d=ev.data;
+            if(d.error||d.raw)return <div style={{padding:24}}><div style={{fontSize:16,fontWeight:700,marginBottom:10}}>{ev.name}</div>
+              <div style={{background:d.error?C.rbg:C.bg2,border:"1px solid "+C.b1,borderRadius:8,padding:16}}>
+                <div style={{fontSize:12,fontWeight:600,color:d.error?C.red:C.t2,marginBottom:8}}>{d.error?"Error":"Raw Response"}</div>
+                <pre style={{fontSize:11,fontFamily:MONO,color:C.t2,whiteSpace:"pre-wrap",lineHeight:1.6}}>{d.error||d.raw}</pre></div></div>;
+            return <div style={{padding:24,animation:"fadeIn .25s ease-out"}}>
+              {/* Identity */}
+              <div style={{display:"flex",gap:12,marginBottom:16}}>
+                {[{label:"Expiring",data:d.expiring,color:C.pri,bg:C.pris},{label:"Candidate",data:d.candidate,color:C.acc2,bg:"rgba(127,184,164,.08)"}].map((side,i)=>
+                  <div key={i} style={{flex:1,background:C.card,border:"1px solid "+C.b1,borderRadius:10,padding:"12px 16px",borderTop:"3px solid "+side.color}}>
+                    <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
+                      <Tag color={side.color} bg={side.bg}>{side.label}</Tag>
+                      {i===1&&d.verdict&&<Tag color={vc(d.verdict)} bg={vb(d.verdict)}>{d.verdict}</Tag>}
+                    </div>
+                    {side.data?<React.Fragment>
+                      <div style={{fontSize:14,fontWeight:600,color:C.t1}}>{side.data.carrier||side.data.insured||"Unknown"}</div>
+                      {side.data.policyNumber&&<div style={{fontSize:11,color:C.t3,fontFamily:MONO,marginTop:4}}>{side.data.policyNumber}</div>}
+                      <div style={{fontSize:11,color:C.t3,marginTop:3}}>{side.data.period} · <strong style={{color:C.t1}}>{side.data.premium}</strong></div>
+                    </React.Fragment>:<div style={{fontSize:12,color:C.t4}}>Identity not parsed</div>}
+                  </div>)}
+              </div>
+              {d.premiumDelta&&<div style={{fontSize:11,color:C.t3,textAlign:"right",marginTop:-10,marginBottom:12,fontFamily:MONO}}>Δ {d.premiumDelta}</div>}
+              {/* Summary */}
+              {d.summary&&<div style={{background:vb(d.verdict),border:"1px solid "+vc(d.verdict)+"22",borderLeft:"3px solid "+vc(d.verdict),borderRadius:8,padding:"14px 18px",marginBottom:18}}>
+                <div style={{fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:".05em",color:vc(d.verdict),marginBottom:5}}>Evaluation Report Summary</div>
+                <div style={{fontSize:13,color:C.t1,lineHeight:1.6}}>{d.summary}</div></div>}
+              {/* Sections */}
+              {(d.sections||[]).map(sec=>renderSec(sec,"eval-"+activeEvalIdx))}
+              {/* Interactions */}
+              {(d.interactions||[]).length>0&&<div style={{background:C.card,border:"1px solid "+C.b1,borderRadius:8,marginTop:12,overflow:"hidden"}}>
+                <div onClick={()=>toggleExpand("eval-"+activeEvalIdx+"-ix")} style={{padding:"11px 16px",display:"flex",alignItems:"center",gap:10,cursor:"pointer",borderBottom:expanded["eval-"+activeEvalIdx+"-ix"]?"1px solid "+C.b1:"none"}}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.pri} strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                  <span style={{fontSize:13,fontWeight:700,flex:1,color:C.t1}}>Interactions</span>
+                  <span style={{fontSize:10,color:C.t4}}>{d.interactions.length} compound effects</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.t4} strokeWidth="2" style={{transform:expanded["eval-"+activeEvalIdx+"-ix"]?"rotate(180deg)":"rotate(0)",transition:"transform .2s"}}><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                {expanded["eval-"+activeEvalIdx+"-ix"]&&<div style={{padding:"8px 16px 14px"}}>
+                  {d.interactions.map((ix,i)=><div key={i} style={{display:"flex",gap:12,padding:"9px 0",borderBottom:i<d.interactions.length-1?"1px solid "+C.b1+"44":"none",alignItems:"flex-start"}}>
+                    <span style={{fontFamily:MONO,fontSize:10,color:C.pri,background:C.pris,padding:"2px 7px",borderRadius:4,flexShrink:0,marginTop:2}}>{ix.sections}</span>
+                    <div><div style={{fontSize:12,fontWeight:600,color:C.t1,marginBottom:2}}>{ix.name}</div><div style={{fontSize:11,color:C.t3,lineHeight:1.5}}>{ix.effect}</div></div>
+                  </div>)}</div>}
+              </div>}
+              {/* Actions */}
+              <div style={{display:"flex",gap:10,marginTop:18}}>
+                <Btn primary disabled={ev.saving||ev.saved} onClick={()=>saveEval(activeEvalIdx)}>{ev.saved?"Saved to Box":ev.saving?"Saving...":"Save to Evaluated Renewals"}</Btn>
+                <Btn ghost onClick={()=>{setWizardStep(1);setSelectedCandidates([])}}>+ Add Candidate</Btn>
+                <Btn ghost onClick={()=>{setWizardStep(0);setSelectedExpiring(null);setSelectedCandidates([])}}>New Eval</Btn>
+              </div>
+            </div>})()}
+        </div>
+      </div>
+    </div>}
+  </div>
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
 </body>
 </html>
