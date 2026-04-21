@@ -440,7 +440,7 @@ function doConnect(){
     var err=document.getElementById('connErr');err.textContent=e.message;err.classList.remove('hidden');
   }).finally(function(){btn.disabled=false;btn.textContent='Connect to Box'});
 }
-function doDisconnect(){TK='';user=null;cls=[];agents=[];selAgent=null;selAgentConfig=null;activeC=null;mv='empty';document.getElementById('connScr').classList.remove('hidden');document.getElementById('appLay').classList.add('hidden');document.getElementById('topUser').textContent='';document.getElementById('topDc').classList.add('hidden')}
+function doDisconnect(){TK='';user=null;cls=[];agents=[];selAgent=null;selAgentConfig=null;activeC=null;activeCid=null;mv='empty';document.getElementById('connScr').classList.remove('hidden');document.getElementById('appLay').classList.add('hidden');document.getElementById('topUser').textContent='';document.getElementById('topDc').classList.add('hidden')}
 function loadCls(){return bGet('/folders/'+raId+'/items?fields=name,type&limit=200').then(function(it){var folders=it.entries.filter(function(e){return e.type==='folder'});cls=[];var chain=Promise.resolve();folders.forEach(function(c){chain=chain.then(function(){return bGet('/folders/'+c.id+'/items?fields=name,type&limit=200').then(function(s){var dirs=s.entries.filter(function(e){return e.type==='folder'});function find(n){var nl=n.toLowerCase();var x=dirs.find(function(e){return e.name.toLowerCase()===nl});return x?x.id:null}cls.push({id:c.id,name:c.name,folders:{expiring:find('Expiring'),renewalOptions:find('Renewal Options'),evaluated:find('Evaluated Renewals'),crossCompare:find('Cross Comparisons Reports')},counts:{}})})})});return chain.then(function(){document.getElementById('stTxt').textContent='Connected \u00b7 '+cls.length+' client'+(cls.length!==1?'s':'');var cchain=Promise.resolve();cls.forEach(function(cl){['expiring','renewalOptions','evaluated','crossCompare'].forEach(function(key){var fid=cl.folders[key];if(!fid)return;cchain=cchain.then(function(){return bGet('/folders/'+fid+'/items?limit=1&fields=name').then(function(r){cl.counts[key]=r.total_count||0}).catch(function(){cl.counts[key]=0})})})});return cchain})})}
 function renderAgent(){var el=document.getElementById('agBox'),sel=document.getElementById('agSel');if(!agents.length){el.classList.add('hidden');return}el.classList.remove('hidden');var h='<option value="">Default (raw prompt)</option>';agents.forEach(function(a){h+='<option value="'+a.id+'"'+(selAgent===a.id?' selected':'')+'>'+esc(a.name)+'</option>'});sel.innerHTML=h;sel.onchange=function(){var aid=sel.value||null;selAgent=aid;selAgentConfig=null;if(aid){bGet('/ai_agents/'+aid+'?fields=ask').then(function(full){if(full.ask)selAgentConfig=cleanAgentConfig(full.ask);console.log('[Agent] Loaded config:',JSON.stringify(selAgentConfig,null,2));toast('Agent loaded','pass')}).catch(function(e){toast('Agent load failed: '+e.message,'fail');selAgent=null;selAgentConfig=null;sel.value=''})}};if(selAgent){bGet('/ai_agents/'+selAgent+'?fields=ask').then(function(full){if(full.ask)selAgentConfig=cleanAgentConfig(full.ask);console.log('[Agent] Auto-loaded:',JSON.stringify(selAgentConfig,null,2))}).catch(function(){selAgent=null;selAgentConfig=null})}}
 
@@ -517,7 +517,9 @@ function previewFile(fileId,fileName){document.getElementById('pvOv').classList.
 function closePv(){document.getElementById('pvOv').classList.add('hidden');document.getElementById('pvBd').innerHTML=''}
 
 /* ═══ WORKSPACE ═══ */
-function selCl(idx){activeC=idx;mv='wizard0';selExp=null;selCands=[];var c=cls[idx];if(!cEvs[c.id])cEvs[c.id]=[];aEi=0;exSec={};
+var activeCid=null;
+function selCl(idx){var c=cls[idx];activeCid=c.id;activeC=idx;mv='loading';selExp=null;selCands=[];if(!cEvs[c.id])cEvs[c.id]=[];aEi=0;exSec={};
+  renderMain();
   Promise.all([
     c.folders.expiring?bGet('/folders/'+c.folders.expiring+'/items?fields=name,type,modified_at&limit=200'):Promise.resolve({entries:[]}),
     c.folders.renewalOptions?bGet('/folders/'+c.folders.renewalOptions+'/items?fields=name,type,modified_at&limit=200'):Promise.resolve({entries:[]}),
@@ -525,14 +527,16 @@ function selCl(idx){activeC=idx;mv='wizard0';selExp=null;selCands=[];var c=cls[i
   ]).then(function(r){
     expF=r[0].entries.filter(function(e){return e.type==='file'});
     candF=r[1].entries.filter(function(e){return e.type==='file'});
-    // Load saved evals from Evaluated Renewals folder
-    var evalFiles=r[2].entries.filter(function(e){return e.type==='file'&&e.name.match(/\.json$/i)});
+    if(expF.length===1)selExp=expF[0].id;
+    var evalFiles=r[2].entries.filter(function(e){return e.type==='file'&&(e.name.match(/\.json$/i)||e.name.match(/\.md$/i))});
     if(evalFiles.length&&!cEvs[c.id].length){
       var loadChain=Promise.resolve();
       evalFiles.forEach(function(ef){
         loadChain=loadChain.then(function(){
-          return fetch(BOX+'/files/'+ef.id+'/content',{headers:{Authorization:'Bearer '+TK}}).then(function(r){return r.json()}).then(function(data){
-            var evName=ef.name.replace(/^Eval_/,'').replace(/_\d{4}-\d{2}-\d{2}\.json$/,'').replace(/_/g,' ');
+          var isMd=ef.name.match(/\.md$/i);
+          return fetch(BOX+'/files/'+ef.id+'/content',{headers:{Authorization:'Bearer '+TK}}).then(function(r){return isMd?r.text():r.json()}).then(function(content){
+            var evName=ef.name.replace(/^Eval_/,'').replace(/_\d{4}-\d{2}-\d{2}[-T][\d-]+\.(json|md)$/i,'').replace(/_/g,' ');
+            var data=isMd?{markdown:content}:content;
             cEvs[c.id].push({name:evName,data:data,saved:true});
           }).catch(function(){});
         });
@@ -540,11 +544,12 @@ function selCl(idx){activeC=idx;mv='wizard0';selExp=null;selCands=[];var c=cls[i
       return loadChain;
     }
   }).catch(function(){expF=[];candF=[]}).then(function(){
-    if(expF.length===1)selExp=expF[0].id;
     if(cEvs[c.id].length){mv='results';aEi=0}
+    else if(selExp){mv='wizard1'}
+    else{mv='wizard0'}
     renderMain();
   })}
-function refreshFiles(){if(activeC===null)return;var c=cls[activeC];Promise.all([
+function refreshFiles(){if(!activeCid)return;var c=null;for(var i=0;i<cls.length;i++){if(cls[i].id===activeCid){c=cls[i];activeC=i;break}}if(!c)return;Promise.all([
     c.folders.expiring?bGet('/folders/'+c.folders.expiring+'/items?fields=name,type,modified_at&limit=200'):Promise.resolve({entries:[]}),
     c.folders.renewalOptions?bGet('/folders/'+c.folders.renewalOptions+'/items?fields=name,type,modified_at&limit=200'):Promise.resolve({entries:[]})
   ]).then(function(r){expF=r[0].entries.filter(function(e){return e.type==='file'});candF=r[1].entries.filter(function(e){return e.type==='file'});renderMain()})}
@@ -575,10 +580,12 @@ function togCand(id){
 /* ═══ RENDER MAIN ═══ */
 function renderMain(){
   var mp=document.getElementById('mn');if(!mp)return;
-  if(activeC===null||activeC>=cls.length){mp.innerHTML='<div class="mn-empty">Select a client from the sidebar</div>';return}
-  var c=cls[activeC],evs=cEvs[c.id]||[];
+  if(!activeCid){mp.innerHTML='<div class="mn-empty">Select a client from the sidebar</div>';return}
+  var c=null;for(var i=0;i<cls.length;i++){if(cls[i].id===activeCid){c=cls[i];activeC=i;break}}
+  if(!c){mp.innerHTML='<div class="mn-empty">Select a client from the sidebar</div>';return}
+  var evs=cEvs[c.id]||[];
   var h='<div class="cl-hdr"><div><h2>'+esc(c.name)+'</h2><div class="cl-hdr-meta">'+expF.length+' expiring \u00b7 '+candF.length+' candidate'+(candF.length!==1?'s':'')+'</div></div><div class="cl-hdr-fill"></div>';
-  if(evs.length){h+='<div class="ev-tabs">';evs.forEach(function(ev,i){h+='<button class="ev-tab'+(mv==='results'&&aEi===i?' on':'')+'" onclick="showEv('+i+')"><div class="ev-dot" style="background:'+vc(ev.data.verdict)+'"></div>'+esc(ev.name.length>18?ev.name.slice(0,18)+'\u2026':ev.name)+'</button>'});h+='<button class="ev-tab" onclick="startNewEval()" style="border-style:dashed;color:var(--pri)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Evaluate</button>';h+='</div>'}
+  if(evs.length){h+='<div class="ev-tabs">';evs.forEach(function(ev,i){h+='<button class="ev-tab'+(mv==='results'&&aEi===i?' on':'')+'" onclick="showEv('+i+')" title="'+esc(ev.name)+'"><div class="ev-dot" style="background:'+vc(ev.data.verdict)+'"></div>'+esc(ev.name.length>18?ev.name.slice(0,18)+'\u2026':ev.name)+'</button>'});h+='<button class="ev-tab" onclick="startNewEval()" style="border-style:dashed;color:var(--pri)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Evaluate</button>';h+='</div>'}
   h+='</div>';
 
   var eyeSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
@@ -600,6 +607,9 @@ function renderMain(){
     if(!candF.length){h+='<div style="padding:20px;text-align:center;color:var(--text-4);font-size:12px">No files yet</div>'}
     else{candF.forEach(function(f){var s=selCands.indexOf(f.id)>=0;h+='<div class="fr'+(s?' sel':'')+'" data-fid="'+f.id+'" onclick="togCand(\''+f.id+'\')">'+docSvg(s)+'<span class="fr-nm">'+esc(f.name)+'</span><button class="fr-eye" onclick="event.stopPropagation();previewFile(\''+f.id+'\',\''+escA(f.name)+'\')">'+eyeSvg+'</button><span class="fr-chk" style="display:'+(s?'inline':'none')+'">'+chkSvg+'</span></div>'})}
     h+='<div class="wiz-acts"><button class="wb" onclick="mv=\'wizard0\';renderMain()">Back</button><button class="wb p" '+(selCands.length?'':'disabled')+' onclick="runEvs()">'+(selCands.length>1?'Evaluate '+selCands.length+' Candidates':selCands.length===1?'Evaluate':'Select files')+'</button></div></div></div>';
+
+  }else if(mv==='loading'){
+    h+='<div class="spinner"><div style="text-align:center"><div class="spin-ring"></div><div style="font-size:14px;font-weight:600;color:var(--text-3)">Loading workspace...</div></div></div>';
 
   }else if(mv==='running'){
     h+='<div class="spinner"><div style="text-align:center"><div class="spin-ring"></div><div style="font-size:16px;font-weight:700;margin-bottom:6px">Analyzing policies...</div><div style="font-size:12px;color:var(--text-3)" id="runProg"></div></div></div>';
@@ -647,7 +657,12 @@ function runEvs(){
       console.log('[Eval] Request body:',JSON.stringify(body,null,2));
       return bPost('/ai/ask',body).then(function(res){
         console.log('[Eval] Response:',JSON.stringify(res,null,2).slice(0,2000));
-        var ed;try{ed=norm(res.answer)}catch(pe){ed={raw:res.answer,verdict:'unknown',summary:'Parse failed.',sections:[],interactions:[]}}
+        var answer=res.answer||'';
+        var ed;
+        // Try JSON parse first
+        try{var m=answer.match(/\{[\s\S]*\}/);if(m){ed=norm(m[0])}}catch(pe){}
+        // If no structured data, treat as markdown document
+        if(!ed||(!ed.sections||!ed.sections.length)){ed={markdown:answer}}
         var ev={name:(cf?cf.name.replace('.pdf',''):'Candidate '+(i+1)),data:ed,cid:cid};
         evs.push(ev);newEvs.push(ev);
       }).catch(function(e){
@@ -664,27 +679,92 @@ function runEvs(){
 }
 
 function autoSaveEv(folderId,ev){
-  var fn='Eval_'+ev.name.replace(/[^a-zA-Z0-9]/g,'_')+'_'+new Date().toISOString().slice(0,10)+'.json';
-  var blob=new Blob([JSON.stringify(ev.data,null,2)],{type:'application/json'});
+  var ts=new Date().toISOString().slice(0,19).replace(/[T:]/g,'-');
+  var isMarkdown=!!ev.data.markdown;
+  var ext=isMarkdown?'.md':'.json';
+  var fn='Eval_'+ev.name.replace(/[^a-zA-Z0-9]/g,'_')+'_'+ts+ext;
+  var content=isMarkdown?ev.data.markdown:JSON.stringify(ev.data,null,2);
+  var blob=new Blob([content],{type:isMarkdown?'text/markdown':'application/json'});
   var form=new FormData();
   form.append('attributes',JSON.stringify({name:fn,parent:{id:folderId}}));
   form.append('file',blob,fn);
   fetch(BUP+'/files/content',{method:'POST',headers:{Authorization:'Bearer '+TK},body:form}).then(function(r){
     if(!r.ok)throw new Error(r.status);
-    ev.saved=true;ev.saving=false;toast('Saved: '+fn,'pass');
+    ev.saved=true;toast('Saved: '+fn,'pass');
   }).catch(function(e){toast('Auto-save failed: '+e.message,'fail')});
 }
 
 /* ═══ RENDER RESULTS ═══ */
+function mdRender(md){
+  // Convert markdown to styled HTML
+  var lines=(md||'').split('\n');var h='';var inTable=false;var inList=false;
+  for(var li=0;li<lines.length;li++){
+    var line=lines[li];
+    // Bold and italic
+    line=line.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+    line=line.replace(/\*(.+?)\*/g,'<em>$1</em>');
+    // Headers
+    if(/^### /.test(line)){if(inList){h+='</ul>';inList=false}h+='<h4 style="font-size:13px;font-weight:700;margin:16px 0 6px;color:var(--text)">'+line.slice(4)+'</h4>';continue}
+    if(/^## /.test(line)){if(inList){h+='</ul>';inList=false}h+='<h3 style="font-size:15px;font-weight:700;margin:20px 0 8px;color:var(--text);border-bottom:1px solid var(--border);padding-bottom:6px">'+line.slice(3)+'</h3>';continue}
+    if(/^# /.test(line)){if(inList){h+='</ul>';inList=false}h+='<h2 style="font-size:17px;font-weight:700;margin:20px 0 10px;color:var(--text)">'+line.slice(2)+'</h2>';continue}
+    // Horizontal rule
+    if(/^---+$/.test(line.trim())){if(inList){h+='</ul>';inList=false}h+='<hr style="border:none;border-top:1px solid var(--border);margin:16px 0">';continue}
+    // Table rows
+    if(line.trim().indexOf('|')===0){
+      var cells=line.split('|').slice(1,-1).map(function(c){return c.trim()});
+      if(cells.every(function(c){return/^[-:]+$/.test(c)}))continue; // separator row
+      if(!inTable){h+='<table style="width:100%;border-collapse:collapse;font-size:12px;margin:8px 0;border:1px solid var(--border);border-radius:6px;overflow:hidden">';inTable=true}
+      var isHeader=li+1<lines.length&&/^\|[-|: ]+\|$/.test(lines[li+1].trim());
+      var tag=isHeader?'th':'td';
+      var style=isHeader?'background:var(--bg);font-weight:700;color:var(--text-2);padding:8px 12px;border-bottom:2px solid var(--border);text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.03em':'padding:8px 12px;border-bottom:1px solid rgba(229,227,222,.4);color:var(--text-2)';
+      h+='<tr>'+cells.map(function(c){return'<'+tag+' style="'+style+'">'+c+'</'+tag+'>'}).join('')+'</tr>';
+      continue;
+    } else if(inTable){h+='</table>';inTable=false}
+    // Bullet lists
+    if(/^[-*] /.test(line.trim())){if(!inList){h+='<ul style="margin:4px 0 4px 20px;font-size:13px;color:var(--text-2);line-height:1.7">';inList=true}h+='<li>'+line.replace(/^[-*] /,'')+'</li>';continue}
+    else if(inList){h+='</ul>';inList=false}
+    // Numbered lists
+    if(/^\d+\. /.test(line.trim())){h+='<div style="padding-left:16px;margin:2px 0;font-size:13px;color:var(--text-2);line-height:1.7">'+line+'</div>';continue}
+    // Empty line
+    if(!line.trim()){h+='<div style="height:8px"></div>';continue}
+    // Regular paragraph
+    h+='<p style="margin:4px 0;font-size:13px;line-height:1.7;color:var(--text-2)">'+line+'</p>';
+  }
+  if(inTable)h+='</table>';
+  if(inList)h+='</ul>';
+  return h;
+}
+
 function renderRes(ev){
   var d=ev.data;
-  if(d.error||d.raw)return'<div class="res"><h3 style="font-size:16px;font-weight:700;margin-bottom:10px">'+esc(ev.name)+'</h3><div style="background:'+(d.error?'var(--fail-soft)':'var(--bg)')+';border:1px solid var(--border);border-radius:8px;padding:16px"><pre style="font-size:11px;font-family:IBM Plex Mono,monospace;white-space:pre-wrap;line-height:1.6">'+esc(d.error||d.raw)+'</pre></div></div>';
+
+  // Error state
+  if(d.error)return'<div class="res"><h3 style="font-size:16px;font-weight:700;margin-bottom:10px">'+esc(ev.name)+'</h3><div style="background:var(--fail-soft);border:1px solid var(--border);border-radius:8px;padding:16px"><pre style="font-size:11px;font-family:IBM Plex Mono,monospace;white-space:pre-wrap;line-height:1.6">'+esc(d.error)+'</pre></div></div>';
+
+  // Markdown document mode (from agent)
+  if(d.markdown){
+    var h='<div class="res" style="max-width:900px;margin:0 auto">';
+    h+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:28px 32px;box-shadow:0 1px 4px rgba(0,0,0,.03)">';
+    h+=mdRender(d.markdown);
+    h+='</div>';
+    h+='<div class="r-acts" style="margin-top:14px">'+(ev.saved?'<span style="font-size:11px;color:var(--pass);font-weight:500">Saved to Box</span>':'<button class="wb" onclick="saveEv('+aEi+')">Save to Box</button>')+'<div style="flex:1"></div><button class="wb" onclick="mv=\'wizard0\';selExp=null;selCands=[];renderMain()">New Comparison</button></div>';
+    h+='</div>';
+    return h;
+  }
+
+  // Legacy raw text
+  if(d.raw)return'<div class="res"><h3 style="font-size:16px;font-weight:700;margin-bottom:10px">'+esc(ev.name)+'</h3><div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:28px 32px">'+mdRender(d.raw)+'</div></div>';
+
+  // Structured JSON mode (from default prompt)
   var h='<div class="res"><div class="id-row">';
-  [{l:'Expiring',dt:d.expiring,cls:'exp',tc:'tag-pri'},{l:'Candidate',dt:d.candidate,cls:'cand',tc:'tag-acc'}].forEach(function(s,i){
+  var expFile=selExp?expF.find(function(x){return x.id===selExp}):null;
+  var candFile=ev.cid?candF.find(function(x){return x.id===ev.cid}):null;
+  [{l:'Expiring',dt:d.expiring,cls:'exp',tc:'tag-pri',fallback:expFile?expFile.name:null},{l:'Candidate',dt:d.candidate,cls:'cand',tc:'tag-acc',fallback:candFile?candFile.name:ev.name}].forEach(function(s,i){
     h+='<div class="id-card '+s.cls+'"><div style="display:flex;gap:6px;margin-bottom:8px"><span class="tag '+s.tc+'">'+s.l+'</span>';
     if(i===1&&d.verdict)h+='<span class="tag '+vt(d.verdict)+'">'+esc(d.verdict)+'</span>';
     h+='</div>';
-    if(s.dt){h+='<div style="font-size:14px;font-weight:600">'+(s.dt.carrier||s.dt.insured||'Unknown')+'</div>';if(s.dt.policyNumber)h+='<div style="font-size:11px;color:var(--text-3);font-family:IBM Plex Mono,monospace;margin-top:4px">'+esc(s.dt.policyNumber)+'</div>';h+='<div style="font-size:11px;color:var(--text-3);margin-top:3px">'+esc(s.dt.period||'')+' \u00b7 <strong>'+esc(s.dt.premium||'')+'</strong></div>'}
+    if(s.dt){h+='<div style="font-size:14px;font-weight:600">'+esc(s.dt.carrier||s.dt.insured||s.fallback||'Unknown')+'</div>';if(s.dt.policyNumber)h+='<div style="font-size:11px;color:var(--text-3);font-family:IBM Plex Mono,monospace;margin-top:4px">'+esc(s.dt.policyNumber)+'</div>';h+='<div style="font-size:11px;color:var(--text-3);margin-top:3px">'+esc(s.dt.period||'')+' \u00b7 <strong>'+esc(s.dt.premium||'')+'</strong></div>'}
+    else if(s.fallback){h+='<div style="font-size:13px;font-weight:600;color:var(--text-2)">'+esc(s.fallback)+'</div>'}
     else h+='<div style="font-size:12px;color:var(--text-4)">Not parsed</div>';
     h+='</div>'});
   h+='</div>';
