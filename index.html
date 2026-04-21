@@ -91,6 +91,9 @@
     .sg-up-lbl { font-size:11px; color:var(--sbt3); }
     .sg-pv { color:var(--sbt3); opacity:.4; background:none; border:none; cursor:pointer; padding:2px; border-radius:3px; display:flex; }
     .sg-pv:hover { opacity:1; color:var(--pri); }
+    .sg-del { color:var(--sbt3); opacity:0; background:none; border:none; cursor:pointer; padding:3px; border-radius:3px; display:flex; flex-shrink:0; transition:opacity .15s; }
+    .sg-it:hover .sg-del { opacity:.5; }
+    .sg-del:hover { opacity:1 !important; color:#dc2626; }
 
     /* Upload queue */
     .uq { border-top:1px solid var(--sbb); max-height:160px; overflow-y:auto; flex-shrink:0; }
@@ -488,11 +491,19 @@ function renderDocs(){
     var fs=it.entries.filter(function(e){return e.type==='file'}).filter(function(f){return!s||f.name.toLowerCase().indexOf(s)>=0});
     var h='<div class="sg-up" onclick="trigUp()"><div class="sg-up-ico"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div><span class="sg-up-lbl">Upload files to Box</span></div>';
     if(!fs.length){h+='<div class="empty"><p>No documents</p></div>';el.innerHTML=h;return}
-    fs.forEach(function(d){var ext=d.name.split('.').pop().toUpperCase();h+='<div class="sg-it" onclick="previewFile(\''+d.id+'\',\''+escA(d.name)+'\')"><div class="sg-ico doc"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div style="flex:1"><div class="sg-nm">'+esc(d.name)+'</div><div class="sg-meta">'+ext+'</div></div></div>'});
+    fs.forEach(function(d){var ext=d.name.split('.').pop().toUpperCase();h+='<div class="sg-it" style="position:relative"><div class="sg-ico doc" onclick="previewFile(\''+d.id+'\',\''+escA(d.name)+'\')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div style="flex:1;min-width:0;cursor:pointer" onclick="previewFile(\''+d.id+'\',\''+escA(d.name)+'\')"><div class="sg-nm" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(d.name)+'">'+esc(d.name)+'</div><div class="sg-meta">'+ext+'</div></div><button class="sg-del" onclick="event.stopPropagation();delBoxFile(\''+d.id+'\',\''+escA(d.name)+'\')" title="Delete"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button></div>'});
     el.innerHTML=h;
   }).catch(function(e){el.innerHTML='<div class="empty"><p>Error: '+esc(e.message)+'</p></div>'});
 }
 function backG(){libView='groups';renderLib()}
+
+function delBoxFile(fileId,fileName){
+  if(!confirm('Delete "'+fileName+'" from Box?'))return;
+  fetch(BOX+'/files/'+fileId,{method:'DELETE',headers:{Authorization:'Bearer '+TK}}).then(function(r){
+    if(!r.ok&&r.status!==204)throw new Error(r.status);
+    toast('Deleted: '+fileName,'pass');renderDocs();
+  }).catch(function(e){toast('Delete failed: '+e.message,'fail')});
+}
 function trigUp(){var fi=document.getElementById('fIn');fi.onchange=function(ev){var fs=Array.from(ev.target.files);if(!fs.length)return;document.getElementById('uq').classList.remove('hidden');var chain=Promise.resolve();fs.forEach(function(f){var q=Date.now()+'_'+Math.random().toString(36).substr(2,4);addQ(q,f.name);chain=chain.then(function(){updQ(q,'Uploading...','p');return bUpFile(f,lfId).then(function(){updQ(q,'Done','d')}).catch(function(e){updQ(q,e.message,'e')})})});chain.then(function(){fi.value='';renderDocs();toast('Uploaded '+fs.length+' file'+(fs.length>1?'s':''),'pass')})};fi.click()}
 function uploadToFolder(folderId){if(!folderId){toast('Folder not found','fail');return}var fi=document.getElementById('fIn');fi.onchange=function(ev){var fs=Array.from(ev.target.files);if(!fs.length)return;document.getElementById('uq').classList.remove('hidden');var chain=Promise.resolve();fs.forEach(function(f){var q=Date.now()+'_'+Math.random().toString(36).substr(2,4);addQ(q,f.name);chain=chain.then(function(){updQ(q,'Uploading...','p');return bUpFile(f,folderId).then(function(){updQ(q,'Done','d')}).catch(function(e){updQ(q,e.message,'e')})})});chain.then(function(){fi.value='';toast('Uploaded '+fs.length+' file'+(fs.length>1?'s':''),'pass');refreshFiles()})};fi.click()}
 function addQ(id,nm){document.getElementById('qL').innerHTML+='<div class="uq-it" id="uq-'+id+'"><span class="uq-nm">'+esc(nm)+'</span><span class="uq-st" id="uqs-'+id+'" style="color:var(--pri)">...</span><div class="uq-sp" id="uqsp-'+id+'"></div></div>'}
@@ -529,6 +540,7 @@ function selCl(idx){activeC=idx;mv='wizard0';selExp=null;selCands=[];var c=cls[i
       return loadChain;
     }
   }).catch(function(){expF=[];candF=[]}).then(function(){
+    if(expF.length===1)selExp=expF[0].id;
     if(cEvs[c.id].length){mv='results';aEi=0}
     renderMain();
   })}
@@ -566,7 +578,7 @@ function renderMain(){
   if(activeC===null||activeC>=cls.length){mp.innerHTML='<div class="mn-empty">Select a client from the sidebar</div>';return}
   var c=cls[activeC],evs=cEvs[c.id]||[];
   var h='<div class="cl-hdr"><div><h2>'+esc(c.name)+'</h2><div class="cl-hdr-meta">'+expF.length+' expiring \u00b7 '+candF.length+' candidate'+(candF.length!==1?'s':'')+'</div></div><div class="cl-hdr-fill"></div>';
-  if(evs.length){h+='<div class="ev-tabs">';evs.forEach(function(ev,i){h+='<button class="ev-tab'+(mv==='results'&&aEi===i?' on':'')+'" onclick="showEv('+i+')"><div class="ev-dot" style="background:'+vc(ev.data.verdict)+'"></div>'+esc(ev.name.length>18?ev.name.slice(0,18)+'\u2026':ev.name)+'</button>'});h+='<button class="ev-tab" onclick="mv=\'wizard1\';selCands=[];renderMain()" style="border-style:dashed;color:var(--pri)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Evaluate</button>';h+='</div>'}
+  if(evs.length){h+='<div class="ev-tabs">';evs.forEach(function(ev,i){h+='<button class="ev-tab'+(mv==='results'&&aEi===i?' on':'')+'" onclick="showEv('+i+')"><div class="ev-dot" style="background:'+vc(ev.data.verdict)+'"></div>'+esc(ev.name.length>18?ev.name.slice(0,18)+'\u2026':ev.name)+'</button>'});h+='<button class="ev-tab" onclick="startNewEval()" style="border-style:dashed;color:var(--pri)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Evaluate</button>';h+='</div>'}
   h+='</div>';
 
   var eyeSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
@@ -600,6 +612,13 @@ function renderMain(){
 }
 function showEv(i){aEi=i;mv='results';renderMain()}
 
+function startNewEval(){
+  selCands=[];
+  if(!selExp&&expF.length===1)selExp=expF[0].id;
+  if(selExp){mv='wizard1';renderMain()}
+  else{mv='wizard0';renderMain()}
+}
+
 function toggleSec(key,hdEl){
   exSec[key]=!exSec[key];
   var sec=hdEl.parentElement;
@@ -611,6 +630,10 @@ function toggleSec(key,hdEl){
 
 /* ═══ RUN EVALS ═══ */
 function runEvs(){
+  if(!selExp){
+    if(expF.length===1){selExp=expF[0].id}
+    else{toast('Select an expiring policy first','fail');mv='wizard0';renderMain();return}
+  }
   mv='running';renderMain();var c=cls[activeC],evs=cEvs[c.id]||[];
   var chain=Promise.resolve();
   var newEvs=[];
@@ -618,7 +641,8 @@ function runEvs(){
     chain=chain.then(function(){
       var cf=candF.find(function(f){return f.id===cid});
       var prog=document.getElementById('runProg');if(prog)prog.textContent='Evaluating '+(i+1)+'/'+selCands.length+': '+(cf?cf.name:cid);
-      var body={mode:'multiple_item_qa',items:[{id:String(selExp),type:'file'},{id:String(cid),type:'file'}],prompt:PROMPT};
+      var evalPrompt=selAgentConfig?'Compare the expiring policy against the candidate renewal. Produce the full evaluation.':PROMPT;
+      var body={mode:'multiple_item_qa',items:[{id:String(selExp),type:'file'},{id:String(cid),type:'file'}],prompt:evalPrompt};
       if(selAgentConfig)body.ai_agent=selAgentConfig;
       console.log('[Eval] Request body:',JSON.stringify(body,null,2));
       return bPost('/ai/ask',body).then(function(res){
