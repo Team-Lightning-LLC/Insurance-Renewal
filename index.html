@@ -442,10 +442,10 @@ function loadCls(){return bGet('/folders/'+raId+'/items?fields=name,type&limit=2
 function renderAgent(){var el=document.getElementById('agBox'),sel=document.getElementById('agSel');if(!agents.length){el.classList.add('hidden');return}el.classList.remove('hidden');var h='<option value="">Default (raw prompt)</option>';agents.forEach(function(a){h+='<option value="'+a.id+'"'+(selAgent===a.id?' selected':'')+'>'+esc(a.name)+'</option>'});sel.innerHTML=h;sel.onchange=function(){var aid=sel.value||null;selAgent=aid;selAgentConfig=null;if(aid){bGet('/ai_agents/'+aid+'?fields=ask').then(function(full){if(full.ask)selAgentConfig=cleanAgentConfig(full.ask);console.log('[Agent] Loaded config:',JSON.stringify(selAgentConfig,null,2));toast('Agent loaded','pass')}).catch(function(e){toast('Agent load failed: '+e.message,'fail');selAgent=null;selAgentConfig=null;sel.value=''})}};if(selAgent){bGet('/ai_agents/'+selAgent+'?fields=ask').then(function(full){if(full.ask)selAgentConfig=cleanAgentConfig(full.ask);console.log('[Agent] Auto-loaded:',JSON.stringify(selAgentConfig,null,2))}).catch(function(){selAgent=null;selAgentConfig=null})}}
 
 function cleanAgentConfig(ask){
-  // Strip Studio-only fields, keep only what /ai/ask accepts
   var clean={type:'ai_agent_ask'};
   var processorKeys=['model','num_tokens_for_completion','llm_endpoint_params','system_message','prompt_template','embeddings','content_template'];
-  function stripProcessor(p){if(!p||typeof p!=='object')return undefined;var o={};processorKeys.forEach(function(k){if(p[k]!==undefined)o[k]=p[k]});return Object.keys(o).length?o:undefined}
+  function stripNulls(obj){if(!obj||typeof obj!=='object')return obj;var o={};for(var k in obj){if(obj.hasOwnProperty(k)&&obj[k]!==null&&obj[k]!==undefined){o[k]=typeof obj[k]==='object'&&!Array.isArray(obj[k])?stripNulls(obj[k]):obj[k]}}return Object.keys(o).length?o:undefined}
+  function stripProcessor(p){if(!p||typeof p!=='object')return undefined;var o={};processorKeys.forEach(function(k){if(p[k]!==undefined&&p[k]!==null){o[k]=typeof p[k]==='object'?stripNulls(p[k]):p[k]}});return Object.keys(o).length?o:undefined}
   if(ask.long_text)clean.long_text=stripProcessor(ask.long_text);
   if(ask.basic_text)clean.basic_text=stripProcessor(ask.basic_text);
   if(ask.long_text_multi)clean.long_text_multi=stripProcessor(ask.long_text_multi);
@@ -618,7 +618,7 @@ function runEvs(){
     chain=chain.then(function(){
       var cf=candF.find(function(f){return f.id===cid});
       var prog=document.getElementById('runProg');if(prog)prog.textContent='Evaluating '+(i+1)+'/'+selCands.length+': '+(cf?cf.name:cid);
-      var body={mode:'multiple_item_qa',items:[{id:selExp,type:'file'},{id:cid,type:'file'}],prompt:PROMPT};
+      var body={mode:'multiple_item_qa',items:[{id:String(selExp),type:'file'},{id:String(cid),type:'file'}],prompt:PROMPT};
       if(selAgentConfig)body.ai_agent=selAgentConfig;
       console.log('[Eval] Request body:',JSON.stringify(body,null,2));
       return bPost('/ai/ask',body).then(function(res){
