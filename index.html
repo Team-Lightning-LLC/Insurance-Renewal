@@ -4,296 +4,246 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CityCenter · Renewal Analyst</title>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}html,body,#root{height:100%}
-body{font-family:'Plus Jakarta Sans',sans-serif;-webkit-font-smoothing:antialiased;background:#F7F6F3}
-@keyframes spin{to{transform:rotate(360deg)}}
-@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-input::placeholder,textarea::placeholder{color:#A0A4AB}
-input:focus,select:focus,textarea:focus{outline:none;border-color:#3D5A80 !important;box-shadow:0 0 0 3px rgba(61,90,128,.08)}
-::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:#D5D3CE;border-radius:6px}
-::selection{background:#3D5A80;color:#fff}
-select{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A0A4AB' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+:root{--bg:#F7F6F3;--surface:#fff;--surface-hover:#F3F1ED;--surface-active:#EFEEE9;--text:#2B2D2E;--text-2:#4A4E54;--text-3:#6B7280;--text-4:#A0A4AB;--border:#E5E3DE;--border-soft:#EFEEE9;--pri:#3D5A80;--pri-soft:rgba(61,90,128,.06);--pri-deep:#2E4A6E;--pri-border:rgba(61,90,128,.14);--acc:#7FB8A4;--acc-deep:#6BA593;--pass:#5BAD7A;--pass-soft:#EDF7F0;--fail:#C75B5B;--fail-soft:#FDF0F0;--warn:#D4A84B;--warn-soft:#FDF6E8;--ease:cubic-bezier(.22,1,.36,1);--fast:150ms;--sb-bg:#2B2D2E;--sb-surface:rgba(255,255,255,.04);--sb-hover:rgba(255,255,255,.06);--sb-text:#E5E3DE;--sb-text-2:#A0A4AB;--sb-text-3:#6B7280;--sb-border:rgba(255,255,255,.07);--sb-active:rgba(61,90,128,.2)}
+*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%}
+body{font-family:'Plus Jakarta Sans',sans-serif;font-weight:400;font-size:14px;line-height:1.6;background:var(--bg);color:var(--text);display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:4px}::selection{background:var(--pri);color:#fff}.hidden{display:none!important}
+@keyframes spin{100%{transform:rotate(360deg)}}@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+.topbar{height:48px;background:var(--sb-bg);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0}.topbar-icon{width:26px;height:26px;border-radius:6px;background:var(--pri);display:flex;align-items:center;justify-content:center}.topbar-name{font-weight:700;font-size:14px;color:#fff}.topbar-sub{font-size:11px;color:rgba(255,255,255,.3)}.topbar-spacer{flex:1}.topbar-user{font-size:11px;color:rgba(255,255,255,.3);font-family:'IBM Plex Mono',monospace}.topbar-btn{font-size:10px;color:rgba(255,255,255,.35);background:0;border:1px solid rgba(255,255,255,.1);border-radius:5px;padding:4px 10px;cursor:pointer;font-family:inherit;font-weight:500}.topbar-btn:hover{border-color:rgba(255,255,255,.25);color:rgba(255,255,255,.6)}
+.topbar-grad{height:2px;background:linear-gradient(90deg,transparent,var(--pri) 25%,var(--acc) 75%,transparent);opacity:.3;flex-shrink:0}
+
+.app-body{display:flex;flex:1;min-height:0}
+
+/* Library */
+.lib{width:300px;min-width:300px;background:var(--sb-bg);display:flex;flex-direction:column;color:var(--sb-text);flex-shrink:0}
+.lib-toolbar{padding:10px 14px;border-bottom:1px solid var(--sb-border);display:flex;align-items:center;gap:6px;flex-shrink:0}
+.lib-toolbar-title{font-size:12px;font-weight:600;flex:1;color:var(--sb-text-2);text-transform:uppercase;letter-spacing:.05em}
+.tb-btn{background:0;border:1px solid var(--sb-border);color:var(--sb-text-2);padding:4px 10px;border-radius:5px;cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit;font-size:11px;font-weight:500;transition:all var(--fast) var(--ease)}.tb-btn:hover{border-color:var(--sb-text-2);color:var(--sb-text);background:var(--sb-hover)}.tb-btn.primary{background:var(--pri);color:#fff;border-color:var(--pri)}.tb-btn.primary:hover{background:var(--pri-deep)}
+.lib-search{padding:6px 14px;border-bottom:1px solid var(--sb-border);flex-shrink:0}.lib-search input{width:100%;padding:6px 10px 6px 28px;border:1px solid var(--sb-border);border-radius:6px;font-family:inherit;font-size:12px;background:rgba(0,0,0,.15);color:var(--sb-text)}.lib-search input:focus{outline:0;border-color:var(--pri)}.lib-search input::placeholder{color:var(--sb-text-3)}.search-wrap{position:relative}.search-wrap svg{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--sb-text-3)}
+.lib-bc{padding:6px 14px;border-bottom:1px solid var(--sb-border);display:flex;align-items:center;gap:4px;font-size:11px;color:var(--sb-text-3);flex-shrink:0}.bc-link{color:var(--pri);cursor:pointer;background:var(--sb-active);border:1px solid var(--sb-border);border-radius:4px;font-family:inherit;font-size:11px;font-weight:500;padding:2px 7px;transition:all var(--fast)}.bc-link:hover{background:var(--pri);color:#fff;border-color:var(--pri)}.bc-cur{color:var(--sb-text);font-weight:600}
+.lib-agent{padding:8px 14px;border-bottom:1px solid var(--sb-border);flex-shrink:0}.lib-agent select{width:100%;padding:6px 28px 6px 8px;font-family:inherit;font-size:11px;border:1px solid var(--sb-border);border-radius:5px;background:rgba(0,0,0,.15);color:var(--sb-text);cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}.lib-agent select:focus{outline:0;border-color:var(--pri)}.lib-agent-lbl{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--sb-text-3);margin-bottom:4px}
+.lib-list{flex:1;overflow-y:auto;padding:2px 0}
+.lib-group{border-bottom:1px solid var(--sb-border)}.lib-gh{padding:8px 14px;font-size:12px;font-weight:600;color:var(--sb-text);cursor:pointer;display:flex;align-items:center;gap:6px;transition:background var(--fast)}.lib-gh:hover{background:var(--sb-hover)}.lib-gh .chev{transition:transform .25s var(--ease);color:var(--sb-text-3);flex-shrink:0}.lib-gh.c .chev{transform:rotate(-90deg)}.lib-gh .gn{flex:1}.lib-gh .ga{opacity:0;display:flex;gap:2px;transition:opacity var(--fast)}.lib-gh:hover .ga{opacity:1}.ga-btn{background:0;border:0;color:var(--sb-text-3);cursor:pointer;padding:2px 3px;border-radius:3px;display:flex;align-items:center;transition:all var(--fast)}.ga-btn:hover{background:var(--sb-active);color:var(--sb-text)}
+.lib-gb{overflow:hidden;transition:max-height .3s var(--ease)}.lib-gb.c{max-height:0!important}
+.lib-sub{padding:5px 14px 2px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--sb-text-3)}
+.lib-it{display:flex;align-items:center;gap:8px;padding:6px 14px;cursor:pointer;transition:background var(--fast)}.lib-it:hover{background:var(--sb-hover)}.lib-it.act{background:var(--sb-active)}
+.lib-ico{width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0}.lib-ico.inp{background:var(--sb-active);color:var(--pri)}.lib-ico.out{background:var(--sb-surface);color:var(--sb-text-3);opacity:.6}.lib-ico.doc{background:var(--sb-surface);color:var(--sb-text-3)}
+.lib-info{flex:1;min-width:0}.lib-nm{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--sb-text)}.lib-it.out-it .lib-nm{font-size:11px;color:var(--sb-text-2);font-weight:400}.lib-meta{font-size:10px;color:var(--sb-text-3)}
+.up-row{display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer;border-bottom:1px solid var(--sb-border);background:var(--sb-surface);transition:all .2s;color:var(--sb-text-2)}.up-row:hover{background:var(--sb-hover)}.up-ico{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1.5px dashed var(--sb-border);color:var(--sb-text-3);transition:all .2s}.up-row:hover .up-ico{border-color:var(--pri);color:var(--pri)}.up-lbl{font-size:11px;color:var(--sb-text-3)}
+.uq{border-top:1px solid var(--sb-border);max-height:160px;overflow-y:auto;flex-shrink:0}.uq-h{padding:5px 14px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--sb-text-3);background:rgba(0,0,0,.1);border-bottom:1px solid var(--sb-border);display:flex;align-items:center;justify-content:space-between}.uq-it{display:flex;align-items:center;gap:8px;padding:4px 14px;font-size:11px;border-bottom:1px solid var(--sb-border);color:var(--sb-text)}.uq-nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.uq-st{font-size:10px}.uq-st.p{color:var(--pri)}.uq-st.d{color:var(--pass)}.uq-st.e{color:var(--fail)}.uq-sp{width:12px;height:12px;border:2px solid var(--sb-border);border-top-color:var(--pri);border-radius:50%;animation:spin .8s linear infinite}
+.lib-status{padding:8px 14px;border-top:1px solid var(--sb-border);display:flex;align-items:center;gap:6px;flex-shrink:0}.lib-dot{width:6px;height:6px;border-radius:50%;background:var(--pass)}.lib-st{font-size:10px;color:var(--sb-text-3)}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--sb-text-3);padding:40px 20px}.empty svg{margin-bottom:10px;opacity:.3}.empty p{font-size:13px;color:var(--sb-text-2)}.empty small{font-size:11px;opacity:.7}
+
+/* Modal */
+.mo{position:fixed;inset:0;background:rgba(43,45,46,.4);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:1000}.mo-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:440px;max-width:95vw;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.12)}.mo-box h2{font-size:18px;font-weight:700;margin-bottom:4px}.mo-box p{font-size:12px;color:var(--text-3);margin-bottom:16px}.mo-lbl{display:block;text-transform:uppercase;letter-spacing:.1em;font-size:10px;font-weight:600;color:var(--text-4);margin-bottom:6px}.mo-box input{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;margin-bottom:12px;background:var(--bg);color:var(--text)}.mo-box input:focus{outline:0;border-color:var(--pri)}.mo-box input::placeholder{color:var(--text-4)}.mo-info{font-size:11px;color:var(--text-3);margin:8px 0 16px;padding:12px;background:var(--bg);border-radius:6px;line-height:1.6}.mo-info b{font-weight:600;color:var(--text-2)}.mo-acts{display:flex;gap:8px}.mo-err{color:var(--fail);font-size:12px;margin-top:8px;text-align:center}
+.mbtn{padding:9px 18px;border-radius:6px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:all var(--fast);flex:1;text-align:center}.mbtn-p{background:var(--pri);color:#fff;border-color:var(--pri)}.mbtn-p:hover{background:var(--pri-deep)}.mbtn-s{background:var(--surface);color:var(--text);border:1px solid var(--border)}.mbtn-s:hover{border-color:var(--text-3)}
+
+/* Connect */
+.conn{flex:1;display:flex;align-items:center;justify-content:center}.conn-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:32px;width:400px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.04)}.conn-card h1{font-size:20px;font-weight:700;margin-bottom:4px}.conn-card p{font-size:12px;color:var(--text-3);margin-bottom:24px}.conn-card input{width:100%;padding:11px 14px;font-size:13px;font-family:'IBM Plex Mono',monospace;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);margin-bottom:12px}.conn-card input:focus{outline:0;border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-soft)}.conn-btn{width:100%;padding:10px;font-size:13px;font-weight:600;font-family:inherit;background:var(--pri);color:#fff;border:0;border-radius:6px;cursor:pointer}.conn-btn:hover{background:var(--pri-deep)}.conn-btn:disabled{opacity:.35;cursor:not-allowed}.conn-err{font-size:12px;color:var(--fail);margin-top:10px}.conn-ft{font-size:10px;color:var(--text-4);margin-top:16px}
+
+/* Main */
+.main{flex:1;overflow:auto;background:var(--bg)}.main-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-4);font-size:13px}
+.cl-hdr{padding:16px 28px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;gap:14;flex-shrink:0}.cl-hdr h2{font-size:18px;font-weight:700}.cl-hdr-m{font-size:11px;color:var(--text-4);margin-top:2px}.cl-hdr-sp{flex:1}
+.ev-tabs{display:flex;gap:4px}.ev-tab{padding:5px 12px;font-size:11px;font-weight:500;font-family:inherit;color:var(--text-3);background:0;border:1px solid var(--border);border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all var(--fast)}.ev-tab:hover{border-color:var(--text-3)}.ev-tab.active{color:var(--pri);background:var(--pri-soft);border-color:rgba(61,90,128,.2);font-weight:700}.ev-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+.wiz{padding:28px;display:flex;justify-content:center;animation:fadeIn .3s ease-out}.wiz-c{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;width:480px;box-shadow:0 2px 12px rgba(0,0,0,.03)}.wiz-c h3{font-size:17px;font-weight:700;margin-bottom:4px}.wdesc{font-size:12px;color:var(--text-3);margin-bottom:18px}
+.fr{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:8px;margin-bottom:5px;cursor:pointer;border:1.5px solid var(--border);transition:all .15s}.fr:hover{border-color:var(--text-4)}.fr.sel{background:var(--pri-soft);border-color:var(--pri)}.fr-nm{flex:1;font-size:13px;font-weight:500}.fr.sel .fr-nm{font-weight:600}.fr-ck{width:18px;height:18px;border-radius:5px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}.fr.sel .fr-ck{border-color:var(--pri);background:var(--pri)}
+.w-acts{margin-top:18px;display:flex;gap:8px;justify-content:flex-end}
+.wb{padding:8px 18px;font-size:12px;font-weight:600;font-family:inherit;border-radius:6px;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text-3);transition:all .15s}.wb:hover{border-color:var(--text-3)}.wb.p{background:var(--pri);color:#fff;border-color:var(--pri);box-shadow:0 2px 10px var(--pri-border)}.wb.p:hover{background:var(--pri-deep)}.wb:disabled{opacity:.35;cursor:not-allowed}
+.ef{padding:24px;text-align:center;color:var(--text-4);font-size:12px;background:var(--bg);border-radius:8px}
+
+.sp{padding:28px;display:flex;align-items:center;justify-content:center;height:60%}.sp-in{text-align:center}.sp-r{width:40px;height:40px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--pri);animation:spin 1s linear infinite;margin:0 auto 20px}.sp-t{font-size:16px;font-weight:700;margin-bottom:6px}.sp-d{font-size:12px;color:var(--text-3)}
+
+.res{padding:24px;animation:fadeIn .25s ease-out}
+.id-row{display:flex;gap:12px;margin-bottom:16px}.id-c{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px}.id-c.exp{border-top:3px solid var(--pri)}.id-c.cnd{border-top:3px solid var(--acc)}
+.tag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;white-space:nowrap;display:inline-block}.t-pri{color:var(--pri);background:var(--pri-soft)}.t-acc{color:var(--acc-deep);background:rgba(127,184,164,.08)}.t-pass{color:var(--pass);background:var(--pass-soft)}.t-warn{color:var(--warn);background:var(--warn-soft)}.t-fail{color:var(--fail);background:var(--fail-soft)}
+.sum{border-radius:8px;padding:14px 18px;margin-bottom:18px;border-left:3px solid}.sum-t{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}.sum-b{font-size:13px;color:var(--text);line-height:1.6}
+
+.sec{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;overflow:hidden}.sec-h{padding:11px 16px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}.sec-h:hover{background:var(--surface-hover)}.sec-n{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-4);width:16px}.sec-nm{font-size:13px;font-weight:600;flex:1}.sec-cv{transition:transform .2s;flex-shrink:0}.sec-cv.o{transform:rotate(180deg)}
+.sec-bd{border-top:1px solid var(--border)}.sg-h{display:grid;grid-template-columns:150px 1fr 1fr;padding:8px 16px 6px;padding-left:42px;background:var(--bg)}.sg-h span{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.sr{display:grid;grid-template-columns:150px 1fr 1fr;padding:10px 16px;padding-left:42px}.sr+.sr{border-top:1px solid rgba(229,227,222,.3)}.sr.df{background:#FFFCF5}.sr-f{font-size:12px;font-weight:600}.sr-v{font-size:12px;color:var(--text-2);line-height:1.55;padding-right:14px}.sr-db{border-left:2px solid var(--fail);padding-left:12px}.sr-s{font-size:11px;color:var(--text-3);line-height:1.5;margin-top:4px}
+
+.ix{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-top:12px;overflow:hidden}.ix-h{padding:11px 16px;display:flex;align-items:center;gap:10px;cursor:pointer}.ix-h:hover{background:var(--surface-hover)}.ix-b{padding:8px 16px 14px}.ix-r{display:flex;gap:12px;padding:9px 0;align-items:flex-start}.ix-r+.ix-r{border-top:1px solid rgba(229,227,222,.3)}.ix-sc{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--pri);background:var(--pri-soft);padding:2px 7px;border-radius:4px;flex-shrink:0;margin-top:2px}.ix-nm{font-size:12px;font-weight:600;margin-bottom:2px}.ix-ef{font-size:11px;color:var(--text-3);line-height:1.5}
+
+.r-acts{display:flex;gap:10px;margin-top:18px}
+
+#toasts{position:fixed;top:58px;right:16px;z-index:10000;display:flex;flex-direction:column;gap:6px;pointer-events:none}.toast{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:6px;font-size:12px;font-weight:500;background:var(--surface);border:1px solid var(--border);color:var(--text);box-shadow:0 8px 30px rgba(0,0,0,.08);pointer-events:auto;max-width:340px;opacity:0;transform:translateX(40px);transition:all .4s var(--ease)}.toast.show{opacity:1;transform:translateX(0)}.toast-pass{border-color:var(--pass);background:var(--pass-soft);color:var(--pass)}.toast-fail{border-color:var(--fail);background:var(--fail-soft);color:var(--fail)}
 </style>
 </head>
 <body>
-<div id="root"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
-<script type="text/babel">
-const{useState,useEffect}=React;
-const FONT="'Plus Jakarta Sans',sans-serif",MONO="'IBM Plex Mono',monospace";
-const C={bg:"#F7F6F3",bg2:"#EFEEE9",bg3:"#E5E3DE",card:"#fff",b1:"#E5E3DE",b2:"#D5D3CE",b3:"#C0BDB5",t1:"#2B2D2E",t2:"#4A4E54",t3:"#6B7280",t4:"#A0A4AB",pri:"#3D5A80",pri2:"#2E4A6E",pris:"rgba(61,90,128,.06)",acc:"#7FB8A4",acc2:"#6BA593",green:"#5BAD7A",gbg:"#EDF7F0",amber:"#D4A84B",abg:"#FDF6E8",red:"#C75B5B",rbg:"#FDF0F0",topbar:"#2B2D2E"};
-const BOX="https://api.box.com/2.0",BOX_UP="https://upload.box.com/api/2.0";
-async function boxGet(t,p){const r=await fetch(BOX+p,{headers:{Authorization:"Bearer "+t}});if(!r.ok)throw new Error(r.status+" "+r.statusText);return r.json()}
-async function boxPost(t,p,b){const r=await fetch(BOX+p,{method:"POST",headers:{Authorization:"Bearer "+t,"Content-Type":"application/json"},body:JSON.stringify(b)});if(!r.ok)throw new Error(r.status+" "+r.statusText);return r.json()}
-async function boxUpload(t,fid,fn,c){const f=new FormData();f.append("attributes",JSON.stringify({name:fn,parent:{id:fid}}));f.append("file",new Blob([c],{type:"application/json"}),fn);const r=await fetch(BOX_UP+"/files/content",{method:"POST",headers:{Authorization:"Bearer "+t},body:f});if(!r.ok)throw new Error(r.status+" "+r.statusText);return r.json()}
-const EVAL_PROMPT="Compare the expiring policy against the candidate policy. Evaluate across all seven categories: Coverage Trigger & Time Architecture, Defense Cost Treatment, Limits Architecture, Exclusions, Endorsement Stack, Conditions, and Standard Boilerplate. Output the full evaluation matrix as a single valid JSON object. Every field you evaluate must appear — set diff:true with significance for differences, diff:false with significance:null for matches. Include the verdict, summary, interactions, and all section data. JSON only, no markdown, no prose outside the JSON.";
-function normalizeEval(raw){let data;if(typeof raw==="string"){const m=raw.match(/\{[\s\S]*\}/);if(m)data=JSON.parse(m[0]);else throw new Error("No JSON")}else data=raw;if(data.sections){data.sections=data.sections.map(s=>Object.assign({},s,{fields:(s.fields||[]).map(f=>{const exp=typeof f.expiring==="object"&&f.expiring!==null?f.expiring.verbatim||JSON.stringify(f.expiring):f.expiring;const cand=typeof f.candidate==="object"&&f.candidate!==null?f.candidate.verbatim||JSON.stringify(f.candidate):f.candidate;let sig=f.significance;if(sig==null){if(typeof f.expiring==="object"&&f.expiring&&f.expiring.significance)sig=f.expiring.significance;if(typeof f.candidate==="object"&&f.candidate&&f.candidate.significance)sig=f.candidate.significance}return{field:f.field,expiring:exp,candidate:cand,diff:f.diff!==undefined?f.diff:exp!==cand,significance:sig||null}})}))}if(!Array.isArray(data.interactions))data.interactions=[];return data}
-
-const Tag=({children,color,bg})=><span style={{fontSize:10,fontWeight:600,color,background:bg,padding:"2px 8px",borderRadius:4,whiteSpace:"nowrap"}}>{children}</span>;
-const Btn=({children,primary,ghost,disabled,onClick,style:s})=><button onClick={disabled?undefined:onClick} style={Object.assign({padding:"8px 18px",fontSize:12,fontWeight:600,fontFamily:FONT,border:ghost?"1px solid "+C.b1:"none",borderRadius:6,cursor:disabled?"not-allowed":"pointer",opacity:disabled?.35:1,color:primary?"#fff":C.t3,background:primary?C.pri:ghost?C.card:C.bg2,boxShadow:primary&&!disabled?"0 2px 10px rgba(61,90,128,.14)":"none",transition:"all .2s ease-out"},s||{})}>{children}</button>;
-
-function App(){
-  const[token,setToken]=useState("");const[connected,setConnected]=useState(false);const[connectErr,setConnectErr]=useState("");const[connecting,setConnecting]=useState(false);const[user,setUser]=useState(null);
-  const[agents,setAgents]=useState([]);const[selectedAgent,setSelectedAgent]=useState(null);
-  const[clients,setClients]=useState([]);const[activeClientIdx,setActiveClientIdx]=useState(null);
-  const[expiringFiles,setExpiringFiles]=useState([]);const[candidateFiles,setCandidateFiles]=useState([]);
-  const[selectedExpiring,setSelectedExpiring]=useState(null);const[selectedCandidates,setSelectedCandidates]=useState([]);
-  const[wizardStep,setWizardStep]=useState(0);const[evals,setEvals]=useState([]);const[activeEvalIdx,setActiveEvalIdx]=useState(0);
-  const[expanded,setExpanded]=useState({});const[runProgress,setRunProgress]=useState("");
-
-  const connect=async()=>{setConnecting(true);setConnectErr("");try{
-    const u=await boxGet(token,"/users/me");setUser(u);
-    const root=await boxGet(token,"/folders/0/items?fields=name,type&limit=200");
-    const ra=root.entries.find(e=>e.type==="folder"&&e.name==="Renewal Analyst");
-    if(!ra)throw new Error("'Renewal Analyst' folder not found");
-    const cf=await boxGet(token,"/folders/"+ra.id+"/items?fields=name,type&limit=200");
-    const cl=[];
-    for(const c of cf.entries.filter(e=>e.type==="folder")){
-      const subs=await boxGet(token,"/folders/"+c.id+"/items?fields=name,type&limit=200");
-      const find=n=>{const f=subs.entries.find(e=>e.type==="folder"&&e.name===n);return f?f.id:null};
-      cl.push({id:c.id,name:c.name,folders:{expiring:find("Expiring"),renewalOptions:find("Renewal Options"),evaluated:find("Evaluated Renewals"),crossCompare:find("Cross Comparisons Reports")}});
-    }
-    setClients(cl);
-    try{const ag=await boxGet(token,"/ai_agents");const en=(ag.entries||[]).filter(a=>a.access_state==="enabled");setAgents(en);const rn=en.find(a=>a.name&&a.name.toLowerCase().includes("renewal"));if(rn)setSelectedAgent(rn.id);else if(en.length===1)setSelectedAgent(en[0].id)}catch(e){console.warn("Agents:",e.message)}
-    setConnected(true);if(cl.length>0)doSelectClient(0,cl);
-  }catch(e){setConnectErr(e.message)}setConnecting(false)};
-
-  const doSelectClient=async(idx,list)=>{const cl=(list||clients)[idx];if(!cl)return;setActiveClientIdx(idx);setWizardStep(0);setSelectedExpiring(null);setSelectedCandidates([]);setEvals([]);setExpanded({});
-    try{const[exp,cand]=await Promise.all([cl.folders.expiring?boxGet(token,"/folders/"+cl.folders.expiring+"/items?fields=name,type,modified_at&limit=200"):{entries:[]},cl.folders.renewalOptions?boxGet(token,"/folders/"+cl.folders.renewalOptions+"/items?fields=name,type,modified_at&limit=200"):{entries:[]}]);setExpiringFiles(exp.entries.filter(e=>e.type==="file"));setCandidateFiles(cand.entries.filter(e=>e.type==="file"))}catch(e){setExpiringFiles([]);setCandidateFiles([])}};
-
-  const disconnect=()=>{setToken("");setConnected(false);setUser(null);setClients([]);setActiveClientIdx(null);setExpiringFiles([]);setCandidateFiles([]);setEvals([]);setAgents([]);setSelectedAgent(null)};
-  const toggleCandidate=id=>setSelectedCandidates(p=>p.includes(id)?p.filter(x=>x!==id):p.concat([id]));
-
-  const runEvals=async()=>{setWizardStep(2);setEvals([]);const nw=[];
-    for(let i=0;i<selectedCandidates.length;i++){const cid=selectedCandidates[i];const cf=candidateFiles.find(f=>f.id===cid);
-      setRunProgress("Evaluating "+(i+1)+"/"+selectedCandidates.length+": "+(cf?cf.name:cid));
-      try{const body={mode:"multiple_item_qa",items:[{id:selectedExpiring,type:"file"},{id:cid,type:"file"}],prompt:EVAL_PROMPT};if(selectedAgent)body.ai_agent={type:"ai_agent_id",id:selectedAgent};
-        const res=await boxPost(token,"/ai/ask",body);let ed;try{ed=normalizeEval(res.answer)}catch(pe){ed={raw:res.answer,verdict:"unknown",summary:"JSON parse failed.",sections:[],interactions:[]}}
-        nw.push({name:(cf?cf.name.replace(".pdf",""):"Candidate "+(i+1)),data:ed,candidateFileId:cid})
-      }catch(e){nw.push({name:(cf?cf.name.replace(".pdf",""):"Candidate "+(i+1)),data:{error:e.message,verdict:"error",summary:"Failed: "+e.message,sections:[],interactions:[]},candidateFileId:cid})}}
-    setEvals(nw);setActiveEvalIdx(0);setWizardStep(3);setRunProgress("")};
-
-  const saveEval=async idx=>{const ev=evals[idx];const cl=clients[activeClientIdx];if(!ev||!cl||!cl.folders.evaluated)return;
-    const fn="Eval_"+ev.name.replace(/[^a-zA-Z0-9]/g,"_")+"_"+new Date().toISOString().slice(0,10)+".json";
-    try{setEvals(p=>p.map((e,i)=>i===idx?Object.assign({},e,{saving:true}):e));await boxUpload(token,cl.folders.evaluated,fn,JSON.stringify(ev.data,null,2));
-      setEvals(p=>p.map((e,i)=>i===idx?Object.assign({},e,{saving:false,saved:true}):e))}catch(e){setEvals(p=>p.map((e2,i)=>i===idx?Object.assign({},e2,{saving:false}):e2))}};
-
-  const toggleExpand=k=>setExpanded(p=>{const n=Object.assign({},p);n[k]=!p[k];return n});
-  const vc=v=>v==="worse"?C.red:v==="better"?C.green:v==="error"?C.t4:C.amber;
-  const vb=v=>v==="worse"?C.rbg:v==="better"?C.gbg:v==="error"?C.bg2:C.abg;
-  const fd=d=>{if(!d)return"";const x=Math.floor((new Date()-new Date(d))/864e5);return x===0?"Today":x===1?"Yesterday":x+"d ago"};
-  const ac=activeClientIdx!==null?clients[activeClientIdx]:null;
-
-  const renderSec=(sec,ek)=>{const k=ek+"-"+sec.num;const io=expanded[k];const flds=sec.fields||[];const hd=flds.some(f=>f.diff);const dc=flds.filter(f=>f.diff).length;
-    return <div key={sec.num} style={{background:C.card,border:"1px solid "+C.b1,borderRadius:8,marginBottom:6,overflow:"hidden"}}>
-      <div onClick={()=>toggleExpand(k)} style={{padding:"11px 16px",display:"flex",alignItems:"center",gap:10,cursor:"pointer",userSelect:"none"}}>
-        <span style={{fontFamily:MONO,fontSize:10,color:C.t4,width:16}}>{sec.num}</span>
-        <span style={{fontSize:13,fontWeight:600,flex:1,color:C.t1}}>{sec.name}</span>
-        {sec.expiringPages&&<span style={{fontSize:10,color:C.t4,fontFamily:MONO}}>{sec.expiringPages} / {sec.candidatePages}</span>}
-        {hd?<Tag color={C.amber} bg={C.abg}>{dc} diff{dc>1?"s":""}</Tag>:<span style={{fontSize:10,color:C.green,fontWeight:600}}>no material differences</span>}
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.t4} strokeWidth="2" style={{transform:io?"rotate(180deg)":"rotate(0)",transition:"transform .2s",flexShrink:0}}><polyline points="6 9 12 15 18 9"/></svg>
-      </div>
-      {io&&flds.length>0&&<div style={{borderTop:"1px solid "+C.b1}}>
-        <div style={{display:"grid",gridTemplateColumns:"150px 1fr 1fr",padding:"8px 16px 6px",paddingLeft:42,background:C.bg}}>
-          <span style={{fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:".05em",color:C.t4}}>Field</span>
-          <span style={{fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:".05em",color:C.pri}}>Expiring</span>
-          <span style={{fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:".05em",color:C.acc2}}>Candidate</span>
-        </div>
-        {flds.map((d,di)=><div key={di} style={{display:"grid",gridTemplateColumns:"150px 1fr 1fr",padding:"10px 16px",paddingLeft:42,borderTop:di>0?"1px solid "+C.b1+"44":"none",background:d.diff?"#FFFCF5":"transparent"}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.t1}}>{d.field}</div>
-          <div style={{fontSize:12,color:C.t2,lineHeight:1.55,paddingRight:14}}>{String(d.expiring||"")}</div>
-          <div><div style={{fontSize:12,color:d.diff?C.t1:C.t2,fontWeight:d.diff?600:400,lineHeight:1.55,borderLeft:d.diff?"2px solid "+C.red:"none",paddingLeft:d.diff?12:0}}>{String(d.candidate||"")}</div>
-            {d.diff&&d.significance&&<div style={{fontSize:11,color:C.t3,lineHeight:1.5,marginTop:4,paddingLeft:d.diff?12:0}}>{d.significance}</div>}</div>
-        </div>)}
-      </div>}
-    </div>};
-
-  return <div style={{fontFamily:FONT,background:C.bg,height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden"}}>
-    {/* Topbar */}
-    <div style={{background:C.topbar,padding:"0 20px",height:48,display:"flex",alignItems:"center",gap:12,flexShrink:0}}>
-      <div style={{display:"flex",alignItems:"center",gap:10}}>
-        <div style={{width:26,height:26,borderRadius:6,background:C.pri,display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
-        </div>
-        <span style={{fontWeight:700,fontSize:14,color:"#fff",letterSpacing:".01em"}}>CityCenter</span>
-        <span style={{fontSize:11,color:"rgba(255,255,255,.3)",fontWeight:400}}>Renewal Analyst</span>
-      </div>
-      <div style={{flex:1}}/>
-      {connected&&<React.Fragment>
-        <span style={{fontSize:11,color:"rgba(255,255,255,.3)",fontFamily:MONO}}>{user&&user.name}</span>
-        <button onClick={disconnect} style={{fontSize:10,color:"rgba(255,255,255,.35)",background:"transparent",border:"1px solid rgba(255,255,255,.1)",borderRadius:5,padding:"4px 10px",cursor:"pointer",fontFamily:FONT,fontWeight:500}}>Disconnect</button>
-      </React.Fragment>}
-    </div>
-    <div style={{height:2,background:"linear-gradient(90deg,transparent,"+C.pri+" 25%,"+C.acc+" 75%,transparent)",opacity:.3,flexShrink:0}}/>
-
-    {/* Connect */}
-    {!connected&&<div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
-      <div style={{background:C.card,border:"1px solid "+C.b1,borderRadius:12,padding:32,width:400,textAlign:"center",boxShadow:"0 4px 24px rgba(0,0,0,.04)"}}>
-        <div style={{width:40,height:40,borderRadius:8,background:C.pri,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px"}}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
-        </div>
-        <div style={{fontSize:20,fontWeight:700,color:C.t1,marginBottom:4}}>CityCenter</div>
-        <div style={{fontSize:12,color:C.t3,marginBottom:24}}>Connect to Box to access your renewal workspaces</div>
-        <input value={token} onChange={e=>setToken(e.target.value)} onKeyDown={e=>e.key==="Enter"&&connect()} type="text" placeholder="Paste your Box developer token..."
-          style={{width:"100%",padding:"11px 14px",fontSize:13,fontFamily:MONO,border:"1px solid "+C.b1,borderRadius:8,background:C.bg,color:C.t1,marginBottom:12}}/>
-        <Btn primary disabled={!token.trim()||connecting} onClick={connect} style={{width:"100%",padding:"10px 18px",fontSize:13}}>
-          {connecting?"Connecting...":"Connect to Box"}</Btn>
-        {connectErr&&<div style={{fontSize:12,color:C.red,marginTop:10}}>{connectErr}</div>}
-        <div style={{fontSize:10,color:C.t4,marginTop:16}}>Powered by Box AI</div>
-      </div>
-    </div>}
-
-    {/* Connected */}
-    {connected&&<div style={{flex:1,display:"flex",minHeight:0}}>
-      {/* Sidebar */}
-      <div style={{width:260,background:C.card,borderRight:"1px solid "+C.b1,display:"flex",flexDirection:"column",flexShrink:0}}>
-        {agents.length>0&&<div style={{padding:"14px 16px",borderBottom:"1px solid "+C.b1}}>
-          <div style={{fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:".05em",color:C.t4,marginBottom:6}}>AI Agent</div>
-          <select value={selectedAgent||""} onChange={e=>setSelectedAgent(e.target.value||null)}
-            style={{width:"100%",padding:"7px 28px 7px 10px",fontSize:12,fontFamily:FONT,border:"1px solid "+C.b1,borderRadius:6,background:C.bg,color:C.t1,cursor:"pointer"}}>
-            <option value="">Default (raw prompt)</option>
-            {agents.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}
-          </select>
-        </div>}
-        <div style={{padding:"14px 12px 8px"}}><div style={{fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:".05em",color:C.t4,paddingLeft:6}}>Clients</div></div>
-        <div style={{flex:1,overflow:"auto",padding:"0 10px"}}>
-          {clients.length===0&&<div style={{fontSize:12,color:C.t4,padding:"12px 6px",fontStyle:"italic"}}>No client folders found</div>}
-          {clients.map((cl,i)=>{const active=i===activeClientIdx;
-            return <div key={cl.id} onClick={()=>doSelectClient(i)} style={{padding:"12px 12px",borderRadius:8,marginBottom:4,cursor:"pointer",transition:"all .15s",background:active?C.pris:"transparent",border:"1px solid "+(active?C.pri+"22":"transparent")}}>
-              <div style={{display:"flex",alignItems:"center",gap:8}}>
-                <div style={{width:32,height:32,borderRadius:8,background:active?C.pri:C.bg2,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .15s"}}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={active?"#fff":C.t4} strokeWidth="1.5"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
-                </div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:13,fontWeight:active?700:500,color:active?C.pri:C.t1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{cl.name}</div>
-                  <div style={{fontSize:10,color:C.t4,marginTop:1}}>{cl.folders.expiring&&cl.folders.renewalOptions?"Ready":"Setup needed"}</div>
-                </div>
-              </div>
-            </div>})}
-        </div>
-        <div style={{padding:"10px 16px",borderTop:"1px solid "+C.b1}}>
-          <div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:6,height:6,borderRadius:"50%",background:C.green}}/><span style={{fontSize:10,color:C.t3}}>Connected · {clients.length} client{clients.length!==1?"s":""}</span></div>
-        </div>
-      </div>
-
-      {/* Main */}
-      <div style={{flex:1,display:"flex",flexDirection:"column",minHeight:0}}>
-        {ac&&<div style={{padding:"14px 24px",borderBottom:"1px solid "+C.b1,background:C.card,display:"flex",alignItems:"center",gap:14,flexShrink:0}}>
-          <div><div style={{fontSize:18,fontWeight:700,color:C.t1}}>{ac.name}</div>
-            <div style={{fontSize:11,color:C.t4,marginTop:2}}>{expiringFiles.length} expiring · {candidateFiles.length} candidate{candidateFiles.length!==1?"s":""}{evals.length>0&&" · "+evals.length+" eval"+(evals.length!==1?"s":"")}</div></div>
-          <div style={{flex:1}}/>
-          {evals.length>0&&<div style={{display:"flex",gap:4}}>{evals.map((ev,i)=><button key={i} onClick={()=>{setActiveEvalIdx(i);setWizardStep(3)}}
-            style={{padding:"5px 12px",fontSize:11,fontWeight:wizardStep===3&&activeEvalIdx===i?700:500,color:wizardStep===3&&activeEvalIdx===i?C.pri:C.t3,background:wizardStep===3&&activeEvalIdx===i?C.pris:"transparent",border:"1px solid "+(wizardStep===3&&activeEvalIdx===i?C.pri+"33":C.b1),borderRadius:6,cursor:"pointer",fontFamily:FONT,display:"flex",alignItems:"center",gap:5,transition:"all .15s"}}>
-            <div style={{width:6,height:6,borderRadius:"50%",background:vc(ev.data.verdict)}}/>{ev.name.length>20?ev.name.slice(0,20)+"…":ev.name}
-          </button>)}</div>}
-        </div>}
-
-        <div style={{flex:1,overflow:"auto"}}>
-          {!ac&&<div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:C.t4,fontSize:13}}>Select a client from the sidebar</div>}
-
-          {/* W0 */}
-          {ac&&wizardStep===0&&<div style={{padding:28,display:"flex",justifyContent:"center",animation:"fadeIn .3s ease-out"}}>
-            <div style={{background:C.card,border:"1px solid "+C.b1,borderRadius:12,padding:24,width:460,boxShadow:"0 2px 12px rgba(0,0,0,.03)"}}>
-              <div style={{fontSize:17,fontWeight:700,color:C.t1,marginBottom:4}}>Select the expiring policy</div>
-              <div style={{fontSize:12,color:C.t3,marginBottom:18}}>From <span style={{fontFamily:MONO,fontSize:11}}>{ac.name}/Expiring</span></div>
-              {expiringFiles.length===0?<div style={{padding:24,textAlign:"center",color:C.t4,fontSize:12,background:C.bg,borderRadius:8}}>No files found. Upload to Box.</div>
-              :expiringFiles.map(f=><div key={f.id} onClick={()=>setSelectedExpiring(f.id)} style={{display:"flex",alignItems:"center",gap:12,padding:"11px 14px",borderRadius:8,marginBottom:5,cursor:"pointer",background:selectedExpiring===f.id?C.pris:"transparent",border:"1.5px solid "+(selectedExpiring===f.id?C.pri:C.b1),transition:"all .15s"}}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={selectedExpiring===f.id?C.pri:C.t4} strokeWidth="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                <div style={{flex:1}}><div style={{fontSize:13,fontWeight:selectedExpiring===f.id?600:400,color:C.t1}}>{f.name}</div><div style={{fontSize:10,color:C.t4}}>{fd(f.modified_at)}</div></div>
-                {selectedExpiring===f.id&&<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.pri} strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>}
-              </div>)}
-              <div style={{marginTop:18,display:"flex",justifyContent:"flex-end"}}><Btn primary disabled={!selectedExpiring} onClick={()=>setWizardStep(1)}>Continue</Btn></div>
-            </div>
-          </div>}
-
-          {/* W1 */}
-          {ac&&wizardStep===1&&<div style={{padding:28,display:"flex",justifyContent:"center",animation:"fadeIn .3s ease-out"}}>
-            <div style={{background:C.card,border:"1px solid "+C.b1,borderRadius:12,padding:24,width:460,boxShadow:"0 2px 12px rgba(0,0,0,.03)"}}>
-              <div style={{fontSize:17,fontWeight:700,color:C.t1,marginBottom:4}}>Select candidates</div>
-              <div style={{fontSize:12,color:C.t3,marginBottom:18}}>From <span style={{fontFamily:MONO,fontSize:11}}>{ac.name}/Renewal Options</span></div>
-              {candidateFiles.length===0?<div style={{padding:24,textAlign:"center",color:C.t4,fontSize:12,background:C.bg,borderRadius:8}}>No files found.</div>
-              :candidateFiles.map(f=><div key={f.id} onClick={()=>toggleCandidate(f.id)} style={{display:"flex",alignItems:"center",gap:12,padding:"11px 14px",borderRadius:8,marginBottom:5,cursor:"pointer",background:selectedCandidates.includes(f.id)?C.pris:"transparent",border:"1.5px solid "+(selectedCandidates.includes(f.id)?C.pri:C.b1),transition:"all .15s"}}>
-                <div style={{width:18,height:18,borderRadius:5,border:"2px solid "+(selectedCandidates.includes(f.id)?C.pri:C.b2),background:selectedCandidates.includes(f.id)?C.pri:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                  {selectedCandidates.includes(f.id)&&<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}</div>
-                <div style={{flex:1}}><div style={{fontSize:13,fontWeight:selectedCandidates.includes(f.id)?600:400,color:C.t1}}>{f.name}</div><div style={{fontSize:10,color:C.t4}}>{fd(f.modified_at)}</div></div>
-              </div>)}
-              <div style={{marginTop:18,display:"flex",gap:8,justifyContent:"flex-end"}}>
-                <Btn ghost onClick={()=>setWizardStep(0)}>Back</Btn>
-                <Btn primary disabled={selectedCandidates.length===0} onClick={runEvals}>{selectedCandidates.length>1?"Evaluate "+selectedCandidates.length+" Candidates":selectedCandidates.length===1?"Evaluate":"Select files"}</Btn>
-              </div>
-            </div>
-          </div>}
-
-          {/* W2 */}
-          {ac&&wizardStep===2&&<div style={{padding:28,display:"flex",alignItems:"center",justifyContent:"center",height:"100%",animation:"fadeIn .3s ease-out"}}>
-            <div style={{textAlign:"center",maxWidth:360}}>
-              <div style={{width:40,height:40,borderRadius:"50%",border:"3px solid "+C.b2,borderTopColor:C.pri,animation:"spin 1s linear infinite",margin:"0 auto 20px"}}/>
-              <div style={{fontSize:16,fontWeight:700,color:C.t1,marginBottom:6}}>Analyzing policies...</div>
-              <div style={{fontSize:12,color:C.t3,marginBottom:6}}>{runProgress}</div>
-              <div style={{fontSize:11,color:C.t4}}>Full 7-section comparison · Interactions · Verdict</div>
-            </div>
-          </div>}
-
-          {/* W3 */}
-          {ac&&wizardStep===3&&evals[activeEvalIdx]&&(()=>{const ev=evals[activeEvalIdx];const d=ev.data;
-            if(d.error||d.raw)return <div style={{padding:24}}><div style={{fontSize:16,fontWeight:700,marginBottom:10}}>{ev.name}</div>
-              <div style={{background:d.error?C.rbg:C.bg2,border:"1px solid "+C.b1,borderRadius:8,padding:16}}>
-                <div style={{fontSize:12,fontWeight:600,color:d.error?C.red:C.t2,marginBottom:8}}>{d.error?"Error":"Raw Response"}</div>
-                <pre style={{fontSize:11,fontFamily:MONO,color:C.t2,whiteSpace:"pre-wrap",lineHeight:1.6}}>{d.error||d.raw}</pre></div></div>;
-            return <div style={{padding:24,animation:"fadeIn .25s ease-out"}}>
-              {/* Identity */}
-              <div style={{display:"flex",gap:12,marginBottom:16}}>
-                {[{label:"Expiring",data:d.expiring,color:C.pri,bg:C.pris},{label:"Candidate",data:d.candidate,color:C.acc2,bg:"rgba(127,184,164,.08)"}].map((side,i)=>
-                  <div key={i} style={{flex:1,background:C.card,border:"1px solid "+C.b1,borderRadius:10,padding:"12px 16px",borderTop:"3px solid "+side.color}}>
-                    <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
-                      <Tag color={side.color} bg={side.bg}>{side.label}</Tag>
-                      {i===1&&d.verdict&&<Tag color={vc(d.verdict)} bg={vb(d.verdict)}>{d.verdict}</Tag>}
-                    </div>
-                    {side.data?<React.Fragment>
-                      <div style={{fontSize:14,fontWeight:600,color:C.t1}}>{side.data.carrier||side.data.insured||"Unknown"}</div>
-                      {side.data.policyNumber&&<div style={{fontSize:11,color:C.t3,fontFamily:MONO,marginTop:4}}>{side.data.policyNumber}</div>}
-                      <div style={{fontSize:11,color:C.t3,marginTop:3}}>{side.data.period} · <strong style={{color:C.t1}}>{side.data.premium}</strong></div>
-                    </React.Fragment>:<div style={{fontSize:12,color:C.t4}}>Identity not parsed</div>}
-                  </div>)}
-              </div>
-              {d.premiumDelta&&<div style={{fontSize:11,color:C.t3,textAlign:"right",marginTop:-10,marginBottom:12,fontFamily:MONO}}>Δ {d.premiumDelta}</div>}
-              {/* Summary */}
-              {d.summary&&<div style={{background:vb(d.verdict),border:"1px solid "+vc(d.verdict)+"22",borderLeft:"3px solid "+vc(d.verdict),borderRadius:8,padding:"14px 18px",marginBottom:18}}>
-                <div style={{fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:".05em",color:vc(d.verdict),marginBottom:5}}>Evaluation Report Summary</div>
-                <div style={{fontSize:13,color:C.t1,lineHeight:1.6}}>{d.summary}</div></div>}
-              {/* Sections */}
-              {(d.sections||[]).map(sec=>renderSec(sec,"eval-"+activeEvalIdx))}
-              {/* Interactions */}
-              {(d.interactions||[]).length>0&&<div style={{background:C.card,border:"1px solid "+C.b1,borderRadius:8,marginTop:12,overflow:"hidden"}}>
-                <div onClick={()=>toggleExpand("eval-"+activeEvalIdx+"-ix")} style={{padding:"11px 16px",display:"flex",alignItems:"center",gap:10,cursor:"pointer",borderBottom:expanded["eval-"+activeEvalIdx+"-ix"]?"1px solid "+C.b1:"none"}}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.pri} strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-                  <span style={{fontSize:13,fontWeight:700,flex:1,color:C.t1}}>Interactions</span>
-                  <span style={{fontSize:10,color:C.t4}}>{d.interactions.length} compound effects</span>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.t4} strokeWidth="2" style={{transform:expanded["eval-"+activeEvalIdx+"-ix"]?"rotate(180deg)":"rotate(0)",transition:"transform .2s"}}><polyline points="6 9 12 15 18 9"/></svg>
-                </div>
-                {expanded["eval-"+activeEvalIdx+"-ix"]&&<div style={{padding:"8px 16px 14px"}}>
-                  {d.interactions.map((ix,i)=><div key={i} style={{display:"flex",gap:12,padding:"9px 0",borderBottom:i<d.interactions.length-1?"1px solid "+C.b1+"44":"none",alignItems:"flex-start"}}>
-                    <span style={{fontFamily:MONO,fontSize:10,color:C.pri,background:C.pris,padding:"2px 7px",borderRadius:4,flexShrink:0,marginTop:2}}>{ix.sections}</span>
-                    <div><div style={{fontSize:12,fontWeight:600,color:C.t1,marginBottom:2}}>{ix.name}</div><div style={{fontSize:11,color:C.t3,lineHeight:1.5}}>{ix.effect}</div></div>
-                  </div>)}</div>}
-              </div>}
-              {/* Actions */}
-              <div style={{display:"flex",gap:10,marginTop:18}}>
-                <Btn primary disabled={ev.saving||ev.saved} onClick={()=>saveEval(activeEvalIdx)}>{ev.saved?"Saved to Box":ev.saving?"Saving...":"Save to Evaluated Renewals"}</Btn>
-                <Btn ghost onClick={()=>{setWizardStep(1);setSelectedCandidates([])}}>+ Add Candidate</Btn>
-                <Btn ghost onClick={()=>{setWizardStep(0);setSelectedExpiring(null);setSelectedCandidates([])}}>New Eval</Btn>
-              </div>
-            </div>})()}
-        </div>
-      </div>
-    </div>}
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="topbar-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></div>
+    <span class="topbar-name">CityCenter</span>
+    <span class="topbar-sub">Renewal Analyst</span>
   </div>
-}
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+  <div class="topbar-spacer"></div>
+  <span class="topbar-user" id="topUser"></span>
+  <button class="topbar-btn hidden" id="topDc" onclick="doDisconnect()">Disconnect</button>
+</div>
+<div class="topbar-grad"></div>
+<div id="toasts"></div>
+
+<div class="mo hidden" id="ncModal" onclick="if(event.target===this)closeNc()">
+  <div class="mo-box"><h2>New Client</h2><p>Create a renewal workspace with four folders in Box</p>
+    <label class="mo-lbl">Client Name</label>
+    <input type="text" id="ncName" placeholder="e.g. Veranda Real Estate">
+    <div class="mo-info">Creates folder structure in Box:<br><b>Expiring</b> · <b>Renewal Options</b> (input)<br><b>Evaluated Renewals</b> · <b>Cross Comparisons Reports</b> (output)</div>
+    <div class="mo-acts"><button class="mbtn mbtn-s" onclick="closeNc()">Cancel</button><button class="mbtn mbtn-p" onclick="doCreateClient()" id="ncBtn">Create</button></div>
+    <div class="mo-err hidden" id="ncErr"></div>
+  </div>
+</div>
+<input type="file" id="fInput" multiple style="display:none">
+
+<div class="app-body">
+  <div class="conn" id="connScreen">
+    <div class="conn-card">
+      <div style="width:40px;height:40px;border-radius:8px;background:var(--pri);display:flex;align-items:center;justify-content:center;margin:0 auto 16px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></div>
+      <h1>CityCenter</h1><p>Connect to Box to access your renewal workspaces</p>
+      <input type="text" id="tokIn" placeholder="Paste your Box developer token..." onkeydown="if(event.key==='Enter')doConnect()">
+      <button class="conn-btn" id="connBtn" onclick="doConnect()">Connect to Box</button>
+      <div class="conn-err hidden" id="connErr"></div>
+      <div class="conn-ft">Powered by Box AI</div>
+    </div>
+  </div>
+  <div class="hidden" id="appLayout" style="display:flex;flex:1;min-height:0">
+    <div class="lib">
+      <div class="lib-toolbar"><span class="lib-toolbar-title">Clients</span>
+        <button class="tb-btn primary" onclick="openNc()"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> New</button>
+        <button class="tb-btn" onclick="refreshLib()"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
+      </div>
+      <div class="lib-search"><div class="search-wrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="Search clients..." id="sInput" oninput="renderLib()"></div></div>
+      <div class="lib-bc" id="bc"><span class="bc-cur">All Clients</span></div>
+      <div class="lib-agent hidden" id="agPick"><div class="lib-agent-lbl">AI Agent</div><select id="agSel"></select></div>
+      <div class="lib-list" id="libList"></div>
+      <div class="uq hidden" id="uQueue"><div class="uq-h"><span>Activity</span><button class="ga-btn" onclick="clearQ()"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div id="qList"></div></div>
+      <div class="lib-status"><div class="lib-dot"></div><span class="lib-st" id="stTxt">Connected</span></div>
+    </div>
+    <div class="main" id="mainP"><div class="main-empty" id="mainE">Select a client from the sidebar</div></div>
+  </div>
+</div>
+
+<script>
+const BOX='https://api.box.com/2.0',BUP='https://upload.box.com/api/2.0';let TK='';
+async function bGet(p){const r=await fetch(BOX+p,{headers:{Authorization:'Bearer '+TK}});if(!r.ok)throw new Error(r.status+' '+r.statusText);return r.json()}
+async function bPost(p,b){const r=await fetch(BOX+p,{method:'POST',headers:{Authorization:'Bearer '+TK,'Content-Type':'application/json'},body:JSON.stringify(b)});if(!r.ok)throw new Error(r.status+' '+r.statusText);return r.json()}
+async function bMkDir(n,pid){return bPost('/folders',{name:n,parent:{id:pid}})}
+async function bUpload(file,fid){const f=new FormData();f.append('attributes',JSON.stringify({name:file.name,parent:{id:fid}}));f.append('file',file,file.name);const r=await fetch(BUP+'/files/content',{method:'POST',headers:{Authorization:'Bearer '+TK},body:f});if(!r.ok)throw new Error(r.status);return r.json()}
+
+let user=null,raId=null,agents=[],selAgent=null,cls=[],lv='groups',lfId=null,lfNm='',activeC=null,cEvs={},aEi=0,mv='empty',selExp=null,selCands=[],expF=[],candF=[],collapsed=new Set(JSON.parse(localStorage.getItem('cc_c')||'[]')),exSec={};
+const EP="Compare the expiring policy against the candidate policy. Evaluate across all seven categories: Coverage Trigger & Time Architecture, Defense Cost Treatment, Limits Architecture, Exclusions, Endorsement Stack, Conditions, and Standard Boilerplate. Output the full evaluation matrix as a single valid JSON object. Every field you evaluate must appear — set diff:true with significance for differences, diff:false with significance:null for matches. Include the verdict, summary, interactions, and all section data. JSON only, no markdown, no prose outside the JSON.";
+const FD=[{n:'Expiring',c:'i'},{n:'Renewal Options',c:'i'},{n:'Evaluated Renewals',c:'o'},{n:'Cross Comparisons Reports',c:'o'}];
+
+function norm(raw){let d;if(typeof raw==='string'){const m=raw.match(/\{[\s\S]*\}/);if(m)d=JSON.parse(m[0]);else throw new Error('No JSON')}else d=raw;if(d.sections)d.sections=d.sections.map(s=>Object.assign({},s,{fields:(s.fields||[]).map(f=>{const e=typeof f.expiring==='object'&&f.expiring?f.expiring.verbatim||JSON.stringify(f.expiring):f.expiring;const c=typeof f.candidate==='object'&&f.candidate?f.candidate.verbatim||JSON.stringify(f.candidate):f.candidate;let sg=f.significance;if(sg==null){if(typeof f.expiring==='object'&&f.expiring&&f.expiring.significance)sg=f.expiring.significance;if(typeof f.candidate==='object'&&f.candidate&&f.candidate.significance)sg=f.candidate.significance}return{field:f.field,expiring:e,candidate:c,diff:f.diff!==undefined?f.diff:e!==c,significance:sg||null}})}));if(!Array.isArray(d.interactions))d.interactions=[];return d}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function escA(s){return(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;')}
+function saveColl(){localStorage.setItem('cc_c',JSON.stringify([...collapsed]))}
+function togColl(id){collapsed.has(id)?collapsed.delete(id):collapsed.add(id);saveColl();renderLib()}
+function vc(v){return v==='worse'?'var(--fail)':v==='better'?'var(--pass)':v==='error'?'var(--text-4)':'var(--warn)'}
+function vb(v){return v==='worse'?'var(--fail-soft)':v==='better'?'var(--pass-soft)':v==='error'?'var(--surface-active)':'var(--warn-soft)'}
+function vt(v){return v==='worse'?'t-fail':v==='better'?'t-pass':v==='error'?'':'t-warn'}
+
+async function doConnect(){const t=document.getElementById('tokIn').value.trim();if(!t)return;TK=t;const b=document.getElementById('connBtn');b.disabled=true;b.textContent='Connecting...';document.getElementById('connErr').classList.add('hidden');
+try{user=await bGet('/users/me');const r=await bGet('/folders/0/items?fields=name,type&limit=200');const ra=r.entries.find(e=>e.type==='folder'&&e.name==='Renewal Analyst');if(!ra)throw new Error("'Renewal Analyst' folder not found");raId=ra.id;await loadCls();
+try{const ag=await bGet('/ai_agents');agents=(ag.entries||[]).filter(a=>a.access_state==='enabled');const rn=agents.find(a=>a.name&&a.name.toLowerCase().includes('renewal'));selAgent=rn?rn.id:agents.length===1?agents[0].id:null}catch(e){}
+document.getElementById('connScreen').classList.add('hidden');const al=document.getElementById('appLayout');al.classList.remove('hidden');al.style.display='flex';document.getElementById('topUser').textContent=user.name||'';document.getElementById('topDc').classList.remove('hidden');renderAg();renderLib()
+}catch(e){const err=document.getElementById('connErr');err.textContent=e.message;err.classList.remove('hidden')}b.disabled=false;b.textContent='Connect to Box'}
+
+function doDisconnect(){TK='';user=null;cls=[];agents=[];activeC=null;mv='empty';document.getElementById('connScreen').classList.remove('hidden');document.getElementById('appLayout').classList.add('hidden');document.getElementById('topUser').textContent='';document.getElementById('topDc').classList.add('hidden')}
+
+async function loadCls(){const it=await bGet('/folders/'+raId+'/items?fields=name,type&limit=200');cls=[];for(const c of it.entries.filter(e=>e.type==='folder')){const s=await bGet('/folders/'+c.id+'/items?fields=name,type&limit=200');const f=n=>{const x=s.entries.find(e=>e.type==='folder'&&e.name===n);return x?x.id:null};cls.push({id:c.id,name:c.name,folders:{expiring:f('Expiring'),renewalOptions:f('Renewal Options'),evaluated:f('Evaluated Renewals'),crossCompare:f('Cross Comparisons Reports')}})}document.getElementById('stTxt').textContent='Connected · '+cls.length+' client'+(cls.length!==1?'s':'')}
+
+function renderAg(){const el=document.getElementById('agPick'),sel=document.getElementById('agSel');if(!agents.length){el.classList.add('hidden');return}el.classList.remove('hidden');let h='<option value="">Default (raw prompt)</option>';agents.forEach(a=>{h+='<option value="'+a.id+'"'+(selAgent===a.id?' selected':'')+'>'+esc(a.name)+'</option>'});sel.innerHTML=h;sel.onchange=()=>{selAgent=sel.value||null}}
+function refreshLib(){loadCls().then(()=>renderLib())}
+
+function renderLib(){if(lv==='docs'){renderDocs();return}const el=document.getElementById('libList');const s=(document.getElementById('sInput').value||'').toLowerCase();document.getElementById('bc').innerHTML='<span class="bc-cur">All Clients</span>';
+if(!cls.length){el.innerHTML='<div class="empty"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg><p>No clients</p><small>Click "New" to create a workspace</small></div>';return}
+const cv='<svg class="chev" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>';
+const fi='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
+let h='';
+for(let ci=0;ci<cls.length;ci++){const c=cls[ci];if(s&&!c.name.toLowerCase().includes(s))continue;const ic=collapsed.has(c.id);
+h+='<div class="lib-group"><div class="lib-gh'+(ic?' c':'')+'" onclick="togColl(\''+c.id+'\')">'+cv+'<span class="gn">'+esc(c.name)+'</span><div class="ga"><button class="ga-btn" onclick="event.stopPropagation();selCl('+ci+')" title="Open workspace"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button></div></div>';
+h+='<div class="lib-gb'+(ic?' c':'')+'" style="max-height:2000px"><div class="lib-sub">Input</div>';
+for(const fd of FD.filter(f=>f.c==='i')){const fid=fd.n==='Expiring'?c.folders.expiring:c.folders.renewalOptions;if(!fid)continue;h+='<div class="lib-it" onclick="openLf(\''+fid+'\',\''+escA(c.name+' / '+fd.n)+'\')"><div class="lib-ico inp">'+fi+'</div><div class="lib-info"><div class="lib-nm">'+esc(fd.n)+'</div></div></div>'}
+h+='<div class="lib-sub">Output</div>';
+for(const fd of FD.filter(f=>f.c==='o')){const fid=fd.n==='Evaluated Renewals'?c.folders.evaluated:c.folders.crossCompare;if(!fid)continue;h+='<div class="lib-it out-it" onclick="openLf(\''+fid+'\',\''+escA(c.name+' / '+fd.n)+'\')"><div class="lib-ico out">'+fi+'</div><div class="lib-info"><div class="lib-nm">'+esc(fd.n)+'</div></div></div>'}
+h+='</div></div>'}
+el.innerHTML=h}
+
+async function openLf(boxId,label){lv='docs';lfId=boxId;lfNm=label;document.getElementById('bc').innerHTML='<button class="bc-link" onclick="backG()"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg> Back</button><span style="margin:0 4px;color:var(--sb-text-3)">/</span><span class="bc-cur">'+esc(label)+'</span>';renderDocs()}
+
+async function renderDocs(){const el=document.getElementById('libList');const s=(document.getElementById('sInput').value||'').toLowerCase();
+try{const it=await bGet('/folders/'+lfId+'/items?fields=name,type,modified_at&limit=200');const fs=it.entries.filter(e=>e.type==='file').filter(f=>!s||f.name.toLowerCase().includes(s));
+let h='<div class="up-row" onclick="trigUp()"><div class="up-ico"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div><span class="up-lbl">Upload files to Box</span></div>';
+if(!fs.length){h+='<div class="empty"><p>No documents</p></div>';el.innerHTML=h;return}
+for(const d of fs){const ext=d.name.split('.').pop().toUpperCase();const dt=d.modified_at?new Date(d.modified_at).toLocaleDateString():'';h+='<div class="lib-it"><div class="lib-ico doc"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="lib-info"><div class="lib-nm">'+esc(d.name)+'</div><div class="lib-meta">'+ext+' · '+dt+'</div></div></div>'}
+el.innerHTML=h}catch(e){el.innerHTML='<div class="empty"><p>Error</p><small>'+esc(e.message)+'</small></div>'}}
+
+function backG(){lv='groups';renderLib()}
+function trigUp(){const fi=document.getElementById('fInput');fi.onchange=async ev=>{const fs=Array.from(ev.target.files);if(!fs.length)return;document.getElementById('uQueue').classList.remove('hidden');for(const f of fs){const q=Date.now()+'_'+Math.random().toString(36).substr(2,4);addQ(q,f.name);try{updQ(q,'Uploading...','p');await bUpload(f,lfId);updQ(q,'Done','d')}catch(e){updQ(q,e.message,'e')}}fi.value='';renderDocs();toast('Uploaded '+fs.length+' file'+(fs.length>1?'s':''),'pass')};fi.click()}
+function addQ(id,nm){document.getElementById('qList').innerHTML+='<div class="uq-it" id="uq-'+id+'"><span class="uq-nm">'+esc(nm)+'</span><span class="uq-st p" id="uqs-'+id+'">...</span><div class="uq-sp" id="uqsp-'+id+'"></div></div>'}
+function updQ(id,s,st){const e=document.getElementById('uqs-'+id),sp=document.getElementById('uqsp-'+id);if(e){e.textContent=s;e.className='uq-st '+st}if(sp&&st!=='p')sp.remove()}
+function clearQ(){document.getElementById('qList').innerHTML='';document.getElementById('uQueue').classList.add('hidden')}
+
+function openNc(){document.getElementById('ncModal').classList.remove('hidden');document.getElementById('ncName').value=''}
+function closeNc(){document.getElementById('ncModal').classList.add('hidden')}
+async function doCreateClient(){const n=document.getElementById('ncName').value.trim();const err=document.getElementById('ncErr'),btn=document.getElementById('ncBtn');if(!n){err.textContent='Name required';err.classList.remove('hidden');return}btn.disabled=true;btn.textContent='Creating...';err.classList.add('hidden');try{const p=await bMkDir(n,raId);for(const fd of FD)await bMkDir(fd.n,p.id);closeNc();await loadCls();renderLib();toast('Created: '+n,'pass')}catch(e){err.textContent=e.message;err.classList.remove('hidden')}btn.disabled=false;btn.textContent='Create'}
+
+async function selCl(idx){activeC=idx;mv='wizard0';selExp=null;selCands=[];const c=cls[idx];if(!cEvs[c.id])cEvs[c.id]=[];aEi=0;exSec={};
+try{const[e,cd]=await Promise.all([c.folders.expiring?bGet('/folders/'+c.folders.expiring+'/items?fields=name,type,modified_at&limit=200'):{entries:[]},c.folders.renewalOptions?bGet('/folders/'+c.folders.renewalOptions+'/items?fields=name,type,modified_at&limit=200'):{entries:[]}]);expF=e.entries.filter(e=>e.type==='file');candF=cd.entries.filter(e=>e.type==='file')}catch(e){expF=[];candF=[]}renderMain()}
+
+function renderMain(){const mp=document.getElementById('mainP'),me=document.getElementById('mainE');if(activeC===null){me.classList.remove('hidden');mp.innerHTML='<div class="main-empty">Select a client from the sidebar</div>';return}me.classList.add('hidden');const c=cls[activeC];const evs=cEvs[c.id]||[];let h='<div class="cl-hdr"><div><h2>'+esc(c.name)+'</h2><div class="cl-hdr-m">'+expF.length+' expiring · '+candF.length+' candidate'+(candF.length!==1?'s':'')+'</div></div><div class="cl-hdr-sp"></div>';
+if(evs.length){h+='<div class="ev-tabs">';evs.forEach((ev,i)=>{h+='<button class="ev-tab'+(mv==='results'&&aEi===i?' active':'')+'" onclick="showEv('+i+')"><div class="ev-dot" style="background:'+vc(ev.data.verdict)+'"></div>'+esc(ev.name.length>18?ev.name.slice(0,18)+'…':ev.name)+'</button>'});h+='</div>'}
+h+='</div>';
+
+if(mv==='wizard0'){h+='<div class="wiz"><div class="wiz-c"><h3>Select the expiring policy</h3><div class="wdesc">From '+esc(c.name)+'/Expiring</div>';
+if(!expF.length)h+='<div class="ef">No files. Upload to Box first.</div>';
+else expF.forEach(f=>{const s=selExp===f.id;h+='<div class="fr'+(s?' sel':'')+'" onclick="selExp=\''+f.id+'\';renderMain()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="'+(s?'var(--pri)':'var(--text-4)')+'" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="fr-nm">'+esc(f.name)+'</span>'+(s?'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--pri)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>':'')+'</div>'});
+h+='<div class="w-acts"><button class="wb p" '+(selExp?'':'disabled')+' onclick="mv=\'wizard1\';renderMain()">Continue</button></div></div></div>'}
+
+else if(mv==='wizard1'){h+='<div class="wiz"><div class="wiz-c"><h3>Select candidates</h3><div class="wdesc">From '+esc(c.name)+'/Renewal Options</div>';
+if(!candF.length)h+='<div class="ef">No files.</div>';
+else candF.forEach(f=>{const s=selCands.includes(f.id);h+='<div class="fr'+(s?' sel':'')+'" onclick="togCand(\''+f.id+'\')"><div class="fr-ck">'+(s?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':'')+'</div><span class="fr-nm">'+esc(f.name)+'</span></div>'});
+h+='<div class="w-acts"><button class="wb" onclick="mv=\'wizard0\';renderMain()">Back</button><button class="wb p" '+(selCands.length?'':'disabled')+' onclick="runEvs()">'+(selCands.length>1?'Evaluate '+selCands.length+' Candidates':selCands.length===1?'Evaluate':'Select files')+'</button></div></div></div>'}
+
+else if(mv==='running'){h+='<div class="sp"><div class="sp-in"><div class="sp-r"></div><div class="sp-t">Analyzing policies...</div><div class="sp-d" id="runProg"></div><div style="font-size:11px;color:var(--text-4);margin-top:6px">Full 7-section comparison · Interactions · Verdict</div></div></div>'}
+
+else if(mv==='results'){const ev=evs[aEi];if(ev)h+=renderRes(ev)}
+
+mp.innerHTML=h}
+
+function togCand(id){const i=selCands.indexOf(id);i>=0?selCands.splice(i,1):selCands.push(id);renderMain()}
+function showEv(i){aEi=i;mv='results';renderMain()}
+
+async function runEvs(){mv='running';renderMain();const c=cls[activeC];const evs=cEvs[c.id]||[];
+for(let i=0;i<selCands.length;i++){const cid=selCands[i];const cf=candF.find(f=>f.id===cid);const p=document.getElementById('runProg');if(p)p.textContent='Evaluating '+(i+1)+'/'+selCands.length+': '+(cf?cf.name:cid);
+try{const body={mode:'multiple_item_qa',items:[{id:selExp,type:'file'},{id:cid,type:'file'}],prompt:EP};if(selAgent)body.ai_agent={type:'ai_agent_id',id:selAgent};const res=await bPost('/ai/ask',body);let ed;try{ed=norm(res.answer)}catch(pe){ed={raw:res.answer,verdict:'unknown',summary:'JSON parse failed.',sections:[],interactions:[]}}
+evs.push({name:(cf?cf.name.replace('.pdf',''):'Candidate '+(i+1)),data:ed,cid:cid})}catch(e){evs.push({name:(cf?cf.name.replace('.pdf',''):'Candidate '+(i+1)),data:{error:e.message,verdict:'error',summary:'Failed: '+e.message,sections:[],interactions:[]},cid:cid})}}
+cEvs[c.id]=evs;aEi=evs.length-selCands.length;mv='results';renderMain()}
+
+function renderRes(ev){const d=ev.data;if(d.error||d.raw)return'<div class="res"><h3 style="font-size:16px;font-weight:700;margin-bottom:10px">'+esc(ev.name)+'</h3><div style="background:'+(d.error?'var(--fail-soft)':'var(--surface-active)')+';border:1px solid var(--border);border-radius:8px;padding:16px"><div style="font-size:12px;font-weight:600;color:'+(d.error?'var(--fail)':'var(--text-2)')+';margin-bottom:8px">'+(d.error?'Error':'Raw Response')+'</div><pre style="font-size:11px;font-family:IBM Plex Mono,monospace;color:var(--text-2);white-space:pre-wrap;line-height:1.6">'+esc(d.error||d.raw)+'</pre></div></div>';
+let h='<div class="res"><div class="id-row">';
+[{l:'Expiring',dt:d.expiring,cls:'exp',tc:'t-pri'},{l:'Candidate',dt:d.candidate,cls:'cnd',tc:'t-acc'}].forEach((s,i)=>{h+='<div class="id-c '+s.cls+'"><div style="display:flex;align-items:center;gap:6px;margin-bottom:8px"><span class="tag '+s.tc+'">'+s.l+'</span>';if(i===1&&d.verdict)h+='<span class="tag '+vt(d.verdict)+'">'+esc(d.verdict)+'</span>';h+='</div>';if(s.dt){h+='<div style="font-size:14px;font-weight:600">'+(s.dt.carrier||s.dt.insured||'Unknown')+'</div>';if(s.dt.policyNumber)h+='<div style="font-size:11px;color:var(--text-3);font-family:IBM Plex Mono,monospace;margin-top:4px">'+esc(s.dt.policyNumber)+'</div>';h+='<div style="font-size:11px;color:var(--text-3);margin-top:3px">'+esc(s.dt.period||'')+' · <strong style="color:var(--text)">'+esc(s.dt.premium||'')+'</strong></div>'}else h+='<div style="font-size:12px;color:var(--text-4)">Identity not parsed</div>';h+='</div>'});
+h+='</div>';if(d.premiumDelta)h+='<div style="font-size:11px;color:var(--text-3);text-align:right;margin-top:-10px;margin-bottom:12px;font-family:IBM Plex Mono,monospace">Δ '+esc(d.premiumDelta)+'</div>';
+if(d.summary)h+='<div class="sum" style="background:'+vb(d.verdict)+';border-color:'+vc(d.verdict)+'"><div class="sum-t" style="color:'+vc(d.verdict)+'">Evaluation Summary</div><div class="sum-b">'+esc(d.summary)+'</div></div>';
+(d.sections||[]).forEach(sec=>{const k='s'+aEi+'-'+sec.num;const o=exSec[k];const fds=sec.fields||[];const dc=fds.filter(f=>f.diff).length;
+h+='<div class="sec"><div class="sec-h" onclick="exSec[\''+k+'\']=!exSec[\''+k+'\'];renderMain()"><span class="sec-n">'+sec.num+'</span><span class="sec-nm">'+esc(sec.name)+'</span>';
+if(dc)h+='<span class="tag t-warn">'+dc+' diff'+(dc>1?'s':'')+'</span>';else h+='<span style="font-size:10px;color:var(--pass);font-weight:600">no material differences</span>';
+h+='<svg class="sec-cv'+(o?' o':'')+'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-4)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>';
+if(o&&fds.length){h+='<div class="sec-bd"><div class="sg-h"><span style="color:var(--text-4)">Field</span><span style="color:var(--pri)">Expiring</span><span style="color:var(--acc-deep)">Candidate</span></div>';
+fds.forEach(f=>{h+='<div class="sr'+(f.diff?' df':'')+'"><div class="sr-f">'+esc(f.field)+'</div><div class="sr-v">'+esc(String(f.expiring||''))+'</div><div><div class="sr-v'+(f.diff?' sr-db':'')+'">'+esc(String(f.candidate||''))+'</div>';if(f.diff&&f.significance)h+='<div class="sr-s'+(f.diff?' sr-db':'')+'">'+esc(f.significance)+'</div>';h+='</div></div>'});h+='</div>'}h+='</div>'});
+const ix=d.interactions||[];if(ix.length){const ik='ix'+aEi;const io=exSec[ik];h+='<div class="ix"><div class="ix-h" onclick="exSec[\''+ik+'\']=!exSec[\''+ik+'\'];renderMain()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pri)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg><span style="font-size:13px;font-weight:700;flex:1">Interactions</span><span style="font-size:10px;color:var(--text-4)">'+ix.length+' compound effects</span><svg class="sec-cv'+(io?' o':'')+'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-4)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>';
+if(io){h+='<div class="ix-b">';ix.forEach(x=>{h+='<div class="ix-r"><span class="ix-sc">'+esc(x.sections)+'</span><div><div class="ix-nm">'+esc(x.name)+'</div><div class="ix-ef">'+esc(x.effect)+'</div></div></div>'});h+='</div>'}h+='</div>'}
+h+='<div class="r-acts"><button class="wb p" onclick="saveEv('+aEi+')" '+(ev.saved?'disabled':'')+'>'+( ev.saved?'Saved to Box':ev.saving?'Saving...':'Save to Evaluated Renewals')+'</button><button class="wb" onclick="mv=\'wizard1\';selCands=[];renderMain()">+ Add Candidate</button><button class="wb" onclick="mv=\'wizard0\';selExp=null;selCands=[];renderMain()">New Eval</button></div></div>';
+return h}
+
+async function saveEv(idx){const c=cls[activeC];const evs=cEvs[c.id];const ev=evs[idx];if(!ev||!c.folders.evaluated)return;ev.saving=true;renderMain();const fn='Eval_'+ev.name.replace(/[^a-zA-Z0-9]/g,'_')+'_'+new Date().toISOString().slice(0,10)+'.json';
+try{const blob=new Blob([JSON.stringify(ev.data,null,2)],{type:'application/json'});const form=new FormData();form.append('attributes',JSON.stringify({name:fn,parent:{id:c.folders.evaluated}}));form.append('file',blob,fn);const r=await fetch(BUP+'/files/content',{method:'POST',headers:{Authorization:'Bearer '+TK},body:form});if(!r.ok)throw new Error(r.status);ev.saving=false;ev.saved=true;toast('Saved to Box','pass')}catch(e){ev.saving=false;toast('Save failed: '+e.message,'fail')}renderMain()}
+
+function toast(msg,type){const c=document.getElementById('toasts'),t=document.createElement('div');t.className='toast toast-'+(type||'');t.innerHTML='<span>'+msg+'</span>';c.appendChild(t);requestAnimationFrame(()=>t.classList.add('show'));setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),400)},3000)}
 </script>
 </body>
 </html>
