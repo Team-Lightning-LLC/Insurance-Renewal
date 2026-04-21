@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CityWide · Renewal Analysis Agent</title>
+<title>CityWide · Renewal Agent</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#F7F6F3;--surface:#fff;--surface-hover:#F3F1ED;--surface-active:#EFEEE9;--text:#2B2D2E;--text-2:#4A4E54;--text-3:#6B7280;--text-4:#A0A4AB;--border:#E5E3DE;--border-soft:#EFEEE9;--pri:#3D5A80;--pri-soft:rgba(61,90,128,.06);--pri-deep:#2E4A6E;--pri-border:rgba(61,90,128,.14);--acc:#7FB8A4;--acc-deep:#6BA593;--pass:#5BAD7A;--pass-soft:#EDF7F0;--fail:#C75B5B;--fail-soft:#FDF0F0;--warn:#D4A84B;--warn-soft:#FDF6E8;--ease:cubic-bezier(.22,1,.36,1);--fast:150ms;--sb-bg:#2B2D2E;--sb-surface:rgba(255,255,255,.04);--sb-hover:rgba(255,255,255,.06);--sb-text:#E5E3DE;--sb-text-2:#A0A4AB;--sb-text-3:#6B7280;--sb-border:rgba(255,255,255,.07);--sb-active:rgba(61,90,128,.2)}
@@ -73,14 +73,28 @@ body{font-family:'Plus Jakarta Sans',sans-serif;font-weight:400;font-size:14px;l
 .r-acts{display:flex;gap:10px;margin-top:18px}
 
 #toasts{position:fixed;top:58px;right:16px;z-index:10000;display:flex;flex-direction:column;gap:6px;pointer-events:none}.toast{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:6px;font-size:12px;font-weight:500;background:var(--surface);border:1px solid var(--border);color:var(--text);box-shadow:0 8px 30px rgba(0,0,0,.08);pointer-events:auto;max-width:340px;opacity:0;transform:translateX(40px);transition:all .4s var(--ease)}.toast.show{opacity:1;transform:translateX(0)}.toast-pass{border-color:var(--pass);background:var(--pass-soft);color:var(--pass)}.toast-fail{border-color:var(--fail);background:var(--fail-soft);color:var(--fail)}
+
+/* Preview modal */
+.preview-overlay{position:fixed;inset:0;background:rgba(43,45,46,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:2000}
+.preview-modal{background:var(--surface);border-radius:12px;width:80vw;max-width:900px;height:85vh;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,.2);overflow:hidden}
+.preview-hdr{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.preview-hdr-name{flex:1;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.preview-close{background:0;border:1px solid var(--border);border-radius:5px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-3);transition:all var(--fast)}.preview-close:hover{border-color:var(--text-3);color:var(--text)}
+.preview-body{flex:1;background:#525659;display:flex;align-items:center;justify-content:center;position:relative}
+.preview-body object,.preview-body iframe{width:100%;height:100%;border:0}
+.preview-loading{color:rgba(255,255,255,.5);font-size:13px}
+.preview-err{color:var(--fail);font-size:13px;text-align:center;padding:20px}
+/* Preview icon button for file rows */
+.pv-btn{background:0;border:0;color:var(--text-4);cursor:pointer;padding:4px;border-radius:4px;display:flex;align-items:center;transition:all var(--fast);flex-shrink:0;opacity:.5}.pv-btn:hover{opacity:1;color:var(--pri);background:var(--pri-soft)}
+.lib-pv{color:var(--sb-text-3);opacity:.4}.lib-pv:hover{opacity:1;color:var(--pri)}
 </style>
 </head>
 <body>
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:10px">
     <div class="topbar-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></div>
-    <span class="topbar-name">CityCenter</span>
-    <span class="topbar-sub">Renewal Analyst</span>
+    <span class="topbar-name">CityWide</span>
+    <span class="topbar-name" style="font-weight:400">Renewal Agent</span>
   </div>
   <div class="topbar-spacer"></div>
   <span class="topbar-user" id="topUser"></span>
@@ -88,6 +102,16 @@ body{font-family:'Plus Jakarta Sans',sans-serif;font-weight:400;font-size:14px;l
 </div>
 <div class="topbar-grad"></div>
 <div id="toasts"></div>
+<div class="preview-overlay hidden" id="pvOverlay" onclick="if(event.target===this)closePv()">
+  <div class="preview-modal">
+    <div class="preview-hdr">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-4)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span class="preview-hdr-name" id="pvName"></span>
+      <button class="preview-close" onclick="closePv()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="preview-body" id="pvBody"><span class="preview-loading">Loading...</span></div>
+  </div>
+</div>
 
 <div class="mo hidden" id="ncModal" onclick="if(event.target===this)closeNc()">
   <div class="mo-box"><h2>New Client</h2><p>Create a renewal workspace with four folders in Box</p>
@@ -104,7 +128,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;font-weight:400;font-size:14px;l
   <div class="conn" id="connScreen">
     <div class="conn-card">
       <div style="width:40px;height:40px;border-radius:8px;background:var(--pri);display:flex;align-items:center;justify-content:center;margin:0 auto 16px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></div>
-      <h1>CityCenter</h1><p>Connect to Box to access your renewal workspaces</p>
+      <h1>CityWide</h1><p>Connect to Box to access your renewal workspaces</p>
       <input type="text" id="tokIn" placeholder="Paste your Box developer token..." onkeydown="if(event.key==='Enter')doConnect()">
       <button class="conn-btn" id="connBtn" onclick="doConnect()">Connect to Box</button>
       <div class="conn-err hidden" id="connErr"></div>
@@ -186,13 +210,24 @@ async function renderDocs(){const el=document.getElementById('libList');const s=
 try{const it=await bGet('/folders/'+lfId+'/items?fields=name,type,modified_at&limit=200');const fs=it.entries.filter(e=>e.type==='file').filter(f=>!s||f.name.toLowerCase().includes(s));
 let h='<div class="up-row" onclick="trigUp()"><div class="up-ico"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div><span class="up-lbl">Upload files to Box</span></div>';
 if(!fs.length){h+='<div style="margin:16px 10px;padding:32px 20px;border:2px dashed var(--sb-border);border-radius:10px;text-align:center;cursor:pointer;transition:all .2s" onclick="trigUp()" onmouseover="this.style.borderColor=\'var(--pri)\';this.style.background=\'var(--sb-active)\'" onmouseout="this.style.borderColor=\'var(--sb-border)\';this.style.background=\'transparent\'"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--sb-text-3)" stroke-width="1.5" style="margin:0 auto 8px;display:block"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><div style="font-size:13px;color:var(--sb-text);font-weight:500;margin-bottom:2px">Upload policy PDFs</div><div style="font-size:11px;color:var(--sb-text-3)">Click to browse files</div></div>';el.innerHTML=h;return}
-for(const d of fs){const ext=d.name.split('.').pop().toUpperCase();const dt=d.modified_at?new Date(d.modified_at).toLocaleDateString():'';h+='<div class="lib-it"><div class="lib-ico doc"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="lib-info"><div class="lib-nm">'+esc(d.name)+'</div><div class="lib-meta">'+ext+' · '+dt+'</div></div></div>'}
+for(const d of fs){const ext=d.name.split('.').pop().toUpperCase();const dt=d.modified_at?new Date(d.modified_at).toLocaleDateString():'';h+='<div class="lib-it" onclick="previewFile(\''+d.id+'\',\''+escA(d.name)+'\')"><div class="lib-ico doc"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="lib-info"><div class="lib-nm">'+esc(d.name)+'</div><div class="lib-meta">'+ext+' · '+dt+'</div></div><button class="pv-btn lib-pv" onclick="event.stopPropagation();previewFile(\''+d.id+'\',\''+escA(d.name)+'\')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>'}
 el.innerHTML=h}catch(e){el.innerHTML='<div class="empty"><p>Error</p><small>'+esc(e.message)+'</small></div>'}}
 
 function backG(){lv='groups';renderLib()}
 function trigUp(){const fi=document.getElementById('fInput');fi.onchange=async ev=>{const fs=Array.from(ev.target.files);if(!fs.length)return;document.getElementById('uQueue').classList.remove('hidden');for(const f of fs){const q=Date.now()+'_'+Math.random().toString(36).substr(2,4);addQ(q,f.name);try{updQ(q,'Uploading...','p');await bUpload(f,lfId);updQ(q,'Done','d')}catch(e){updQ(q,e.message,'e')}}fi.value='';renderDocs();toast('Uploaded '+fs.length+' file'+(fs.length>1?'s':''),'pass')};fi.click()}
 
-function uploadToFolder(folderId,clientIdx){if(!folderId){toast('Folder not found — create it first','fail');return}const fi=document.getElementById('fInput');fi.onchange=async ev=>{const fs=Array.from(ev.target.files);if(!fs.length)return;document.getElementById('uQueue').classList.remove('hidden');for(const f of fs){const q=Date.now()+'_'+Math.random().toString(36).substr(2,4);addQ(q,f.name);try{updQ(q,'Uploading...','p');await bUpload(f,folderId);updQ(q,'Done','d')}catch(e){updQ(q,e.message,'e')}}fi.value='';toast('Uploaded '+fs.length+' file'+(fs.length>1?'s':''),'pass');if(clientIdx!==undefined)await selCl(clientIdx)};fi.click()}
+function uploadToFolder(folderId,clientIdx){if(!folderId){toast('Folder not found — create it first','fail');return}const fi=document.getElementById('fInput');fi.onchange=async ev=>{const fs=Array.from(ev.target.files);if(!fs.length)return;document.getElementById('uQueue').classList.remove('hidden');for(const f of fs){const q=Date.now()+'_'+Math.random().toString(36).substr(2,4);addQ(q,f.name);try{updQ(q,'Uploading...','p');await bUpload(f,folderId);updQ(q,'Done','d')}catch(e){updQ(q,e.message,'e')}}fi.value='';toast('Uploaded '+fs.length+' file'+(fs.length>1?'s':''),'pass');await refreshFiles()};fi.click()}
+
+async function refreshFiles(){if(activeC===null)return;const c=cls[activeC];try{const[e,cd]=await Promise.all([c.folders.expiring?bGet('/folders/'+c.folders.expiring+'/items?fields=name,type,modified_at&limit=200'):{entries:[]},c.folders.renewalOptions?bGet('/folders/'+c.folders.renewalOptions+'/items?fields=name,type,modified_at&limit=200'):{entries:[]}]);expF=e.entries.filter(x=>x.type==='file');candF=cd.entries.filter(x=>x.type==='file')}catch(e){} renderMain()}
+
+async function previewFile(fileId,fileName){document.getElementById('pvOverlay').classList.remove('hidden');document.getElementById('pvName').textContent=fileName;document.getElementById('pvBody').innerHTML='<span class="preview-loading">Loading document...</span>';
+try{const r=await fetch(BOX+'/files/'+fileId+'/content',{headers:{Authorization:'Bearer '+TK}});if(!r.ok)throw new Error(r.status+' '+r.statusText);const blob=await r.blob();const url=URL.createObjectURL(blob);const ext=(fileName||'').split('.').pop().toLowerCase();
+if(ext==='pdf'){document.getElementById('pvBody').innerHTML='<object data="'+url+'" type="application/pdf" style="width:100%;height:100%"><p style="padding:40px;color:#fff;text-align:center">PDF preview not supported in this browser. <a href="'+url+'" download="'+fileName+'" style="color:var(--pri)">Download instead</a></p></object>'}
+else if(['png','jpg','jpeg','gif','webp','svg'].includes(ext)){document.getElementById('pvBody').innerHTML='<img src="'+url+'" style="max-width:100%;max-height:100%;object-fit:contain">'}
+else{document.getElementById('pvBody').innerHTML='<div style="padding:40px;text-align:center"><p style="color:rgba(255,255,255,.6);margin-bottom:12px">Preview not available for .'+ext+' files</p><a href="'+url+'" download="'+fileName+'" style="color:var(--pri);font-weight:600;text-decoration:none">Download file</a></div>'}
+}catch(e){document.getElementById('pvBody').innerHTML='<div class="preview-err">Failed to load: '+esc(e.message)+'</div>'}}
+
+function closePv(){document.getElementById('pvOverlay').classList.add('hidden');document.getElementById('pvBody').innerHTML=''}
 function addQ(id,nm){document.getElementById('qList').innerHTML+='<div class="uq-it" id="uq-'+id+'"><span class="uq-nm">'+esc(nm)+'</span><span class="uq-st p" id="uqs-'+id+'">...</span><div class="uq-sp" id="uqsp-'+id+'"></div></div>'}
 function updQ(id,s,st){const e=document.getElementById('uqs-'+id),sp=document.getElementById('uqsp-'+id);if(e){e.textContent=s;e.className='uq-st '+st}if(sp&&st!=='p')sp.remove()}
 function clearQ(){document.getElementById('qList').innerHTML='';document.getElementById('uQueue').classList.add('hidden')}
@@ -212,12 +247,12 @@ h+='</div>';
 
 if(mv==='wizard0'){h+='<div class="wiz"><div class="wiz-c"><h3>Select the expiring policy</h3><div class="wdesc">From '+esc(c.name)+'/Expiring</div>';
 if(!expF.length)h+='<div style="padding:28px 20px;border:2px dashed var(--border);border-radius:10px;text-align:center;cursor:pointer;transition:all .2s" onclick="uploadToFolder(\''+c.folders.expiring+'\','+activeC+')" onmouseover="this.style.borderColor=\'var(--pri)\';this.style.background=\'var(--pri-soft)\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.background=\'transparent\'"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--text-4)" stroke-width="1.5" style="margin:0 auto 6px;display:block"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Upload expiring policy</div><div style="font-size:11px;color:var(--text-3)">Click to browse PDF files</div></div>';
-else expF.forEach(f=>{const s=selExp===f.id;h+='<div class="fr'+(s?' sel':'')+'" onclick="selExp=\''+f.id+'\';renderMain()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="'+(s?'var(--pri)':'var(--text-4)')+'" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="fr-nm">'+esc(f.name)+'</span>'+(s?'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--pri)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>':'')+'</div>'});
+else expF.forEach(f=>{const s=selExp===f.id;h+='<div class="fr'+(s?' sel':'')+'" onclick="selExp=\''+f.id+'\';renderMain()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="'+(s?'var(--pri)':'var(--text-4)')+'" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="fr-nm">'+esc(f.name)+'</span><button class="pv-btn" onclick="event.stopPropagation();previewFile(\''+f.id+'\',\''+escA(f.name)+'\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>'+(s?'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--pri)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>':'')+'</div>'});
 h+='<div class="w-acts"><button class="wb p" '+(selExp?'':'disabled')+' onclick="mv=\'wizard1\';renderMain()">Continue</button></div></div></div>'}
 
 else if(mv==='wizard1'){h+='<div class="wiz"><div class="wiz-c"><h3>Select candidates</h3><div class="wdesc">From '+esc(c.name)+'/Renewal Options</div>';
 if(!candF.length)h+='<div style="padding:28px 20px;border:2px dashed var(--border);border-radius:10px;text-align:center;cursor:pointer;transition:all .2s" onclick="uploadToFolder(\''+c.folders.renewalOptions+'\','+activeC+')" onmouseover="this.style.borderColor=\'var(--pri)\';this.style.background=\'var(--pri-soft)\'" onmouseout="this.style.borderColor=\'var(--border)\';this.style.background=\'transparent\'"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--text-4)" stroke-width="1.5" style="margin:0 auto 6px;display:block"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Upload renewal candidates</div><div style="font-size:11px;color:var(--text-3)">Click to browse PDF files</div></div>';
-else candF.forEach(f=>{const s=selCands.includes(f.id);h+='<div class="fr'+(s?' sel':'')+'" onclick="togCand(\''+f.id+'\')"><div class="fr-ck">'+(s?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':'')+'</div><span class="fr-nm">'+esc(f.name)+'</span></div>'});
+else candF.forEach(f=>{const s=selCands.includes(f.id);h+='<div class="fr'+(s?' sel':'')+'" onclick="togCand(\''+f.id+'\')"><div class="fr-ck">'+(s?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':'')+'</div><span class="fr-nm">'+esc(f.name)+'</span><button class="pv-btn" onclick="event.stopPropagation();previewFile(\''+f.id+'\',\''+escA(f.name)+'\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>'});
 h+='<div class="w-acts"><button class="wb" onclick="mv=\'wizard0\';renderMain()">Back</button><button class="wb p" '+(selCands.length?'':'disabled')+' onclick="runEvs()">'+(selCands.length>1?'Evaluate '+selCands.length+' Candidates':selCands.length===1?'Evaluate':'Select files')+'</button></div></div></div>'}
 
 else if(mv==='running'){h+='<div class="sp"><div class="sp-in"><div class="sp-r"></div><div class="sp-t">Analyzing policies...</div><div class="sp-d" id="runProg"></div><div style="font-size:11px;color:var(--text-4);margin-top:6px">Full 7-section comparison · Interactions · Verdict</div></div></div>'}
