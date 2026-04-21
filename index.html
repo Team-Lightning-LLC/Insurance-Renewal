@@ -345,12 +345,13 @@ function bUpFile(file,fid){var f=new FormData();f.append('attributes',JSON.strin
 
 /* ═══ STATE ═══ */
 var user=null,raId=null,agents=[],selAgent=null,selAgentConfig=null;
-var cls=[],activeC=null,cEvs={},aEi=0,mv='empty';
-var selExp=null,selCands=[],expF=[],candF=[];
+var cls=[],activeC=null,cEvs={},cXc={},aEi=0,mv='empty';
+var selExp=null,selCands=[],expF=[],candF=[],evalFiles=[];
 var collapsed=new Set(JSON.parse(localStorage.getItem('cw_c')||'[]'));
 var exSec={},libView='groups',lfId=null,lfNm='';
 var FD=[{n:'Expiring',c:'i'},{n:'Renewal Options',c:'i'},{n:'Evaluated Renewals',c:'o'},{n:'Cross Comparisons Reports',c:'o'}];
 var PROMPT='You are comparing an expiring insurance policy against a candidate renewal/quote. Analyze both documents and output ONLY a valid JSON object with this exact structure — no markdown, no commentary, no text outside the JSON:\n\n{"verdict":"worse|better|mixed","summary":"2-3 sentence summary of key changes","expiring":{"carrier":"...","policyNumber":"...","period":"...","premium":"..."},"candidate":{"carrier":"...","policyNumber":"...","period":"...","premium":"..."},"premiumDelta":"+$X or -$X","sections":[{"num":1,"name":"Coverage Trigger & Time Architecture","fields":[{"field":"Form Type","expiring":"...","candidate":"...","diff":true,"significance":"explanation or null"}]},{"num":2,"name":"Defense Cost Treatment","fields":[...]},{"num":3,"name":"Limits Architecture","fields":[...]},{"num":4,"name":"Exclusions","fields":[...]},{"num":5,"name":"Endorsement Stack","fields":[...]},{"num":6,"name":"Conditions","fields":[...]},{"num":7,"name":"Standard Boilerplate","fields":[...]}],"interactions":[{"name":"...","sections":"1,3","effect":"..."}]}\n\nEvery field must have diff:true or diff:false. significance is a string when diff is true, null when false. List ALL fields you can extract from both documents in each section. Output valid JSON only.';
+var XC_PROMPT='You have been given multiple renewal evaluation documents for the same insured. Each document is a comparison of the expiring policy against one candidate renewal or quote. Cross-compare ALL candidates. Produce a comprehensive recommendation report that includes: 1) Executive summary with a clear recommendation of which candidate to pursue, 2) Ranked comparison of all candidates from best to worst with reasoning, 3) Side-by-side snapshot table of key differences (premium, limits, deductibles, defense treatment, major exclusions), 4) Risk analysis of each candidate highlighting coverage gaps and red flags, 5) Negotiation points — what to push back on with each carrier. Format the report with clear headings and structure. This is a client-facing deliverable.';
 
 /* ═══ HELPERS ═══ */
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
@@ -523,15 +524,19 @@ function selCl(idx){var c=cls[idx];activeCid=c.id;activeC=idx;mv='loading';selEx
   Promise.all([
     c.folders.expiring?bGet('/folders/'+c.folders.expiring+'/items?fields=name,type,modified_at&limit=200'):Promise.resolve({entries:[]}),
     c.folders.renewalOptions?bGet('/folders/'+c.folders.renewalOptions+'/items?fields=name,type,modified_at&limit=200'):Promise.resolve({entries:[]}),
-    c.folders.evaluated?bGet('/folders/'+c.folders.evaluated+'/items?fields=name,type,modified_at&limit=200'):Promise.resolve({entries:[]})
+    c.folders.evaluated?bGet('/folders/'+c.folders.evaluated+'/items?fields=name,type,modified_at&limit=200'):Promise.resolve({entries:[]}),
+    c.folders.crossCompare?bGet('/folders/'+c.folders.crossCompare+'/items?fields=name,type,modified_at&limit=200'):Promise.resolve({entries:[]})
   ]).then(function(r){
     expF=r[0].entries.filter(function(e){return e.type==='file'});
     candF=r[1].entries.filter(function(e){return e.type==='file'});
     if(expF.length===1)selExp=expF[0].id;
-    var evalFiles=r[2].entries.filter(function(e){return e.type==='file'&&(e.name.match(/\.json$/i)||e.name.match(/\.md$/i))});
-    if(evalFiles.length&&!cEvs[c.id].length){
-      var loadChain=Promise.resolve();
-      evalFiles.forEach(function(ef){
+    // Load evals
+    var evalEntries=r[2].entries.filter(function(e){return e.type==='file'&&(e.name.match(/\.json$/i)||e.name.match(/\.md$/i))});
+    // Load cross-compare reports
+    var xcEntries=r[3].entries.filter(function(e){return e.type==='file'&&e.name.match(/CrossCompare/i)});
+    var loadChain=Promise.resolve();
+    if(evalEntries.length&&!cEvs[c.id].length){
+      evalEntries.forEach(function(ef){
         loadChain=loadChain.then(function(){
           var isMd=ef.name.match(/\.md$/i);
           return fetch(BOX+'/files/'+ef.id+'/content',{headers:{Authorization:'Bearer '+TK}}).then(function(r){return isMd?r.text():r.json()}).then(function(content){
@@ -541,8 +546,16 @@ function selCl(idx){var c=cls[idx];activeCid=c.id;activeC=idx;mv='loading';selEx
           }).catch(function(){});
         });
       });
-      return loadChain;
     }
+    if(xcEntries.length&&!cXc[c.id]){
+      var latest=xcEntries.sort(function(a,b){return(b.modified_at||'').localeCompare(a.modified_at||'')})[0];
+      loadChain=loadChain.then(function(){
+        return fetch(BOX+'/files/'+latest.id+'/content',{headers:{Authorization:'Bearer '+TK}}).then(function(r){return r.text()}).then(function(text){
+          cXc[c.id]={report:text,generated:latest.modified_at,saved:true};
+        }).catch(function(){});
+      });
+    }
+    return loadChain;
   }).catch(function(){expF=[];candF=[]}).then(function(){
     if(cEvs[c.id].length){mv='results';aEi=0}
     else if(selExp){mv='wizard1'}
@@ -585,7 +598,9 @@ function renderMain(){
   if(!c){mp.innerHTML='<div class="mn-empty">Select a client from the sidebar</div>';return}
   var evs=cEvs[c.id]||[];
   var h='<div class="cl-hdr"><div><h2>'+esc(c.name)+'</h2><div class="cl-hdr-meta">'+expF.length+' expiring \u00b7 '+candF.length+' candidate'+(candF.length!==1?'s':'')+'</div></div><div class="cl-hdr-fill"></div>';
-  if(evs.length){h+='<div class="ev-tabs">';evs.forEach(function(ev,i){h+='<button class="ev-tab'+(mv==='results'&&aEi===i?' on':'')+'" onclick="showEv('+i+')" title="'+esc(ev.name)+'"><div class="ev-dot" style="background:'+vc(ev.data.verdict)+'"></div>'+esc(ev.name.length>18?ev.name.slice(0,18)+'\u2026':ev.name)+'</button>'});h+='<button class="ev-tab" onclick="startNewEval()" style="border-style:dashed;color:var(--pri)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Evaluate</button>';h+='</div>'}
+  if(evs.length){h+='<div class="ev-tabs">';evs.forEach(function(ev,i){h+='<button class="ev-tab'+(mv==='results'&&aEi===i?' on':'')+'" onclick="showEv('+i+')" title="'+esc(ev.name)+'"><div class="ev-dot" style="background:'+vc(ev.data.verdict)+'"></div>'+esc(ev.name.length>18?ev.name.slice(0,18)+'\u2026':ev.name)+'</button>'});h+='<button class="ev-tab" onclick="startNewEval()" style="border-style:dashed;color:var(--pri)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Evaluate</button>';
+    if(evs.length>=2){h+='<button class="ev-tab'+(mv==='crossresult'?' on':'')+'" onclick="showCrossCompare()" style="margin-left:4px;'+(mv==='crossresult'?'background:var(--acc);color:#fff;border-color:var(--acc)':'background:rgba(127,184,164,.08);color:var(--acc-deep);border-color:var(--acc)')+'"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M4 4l17 17"/></svg> Cross-Compare</button>'}
+    h+='</div>'}
   h+='</div>';
 
   var eyeSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
@@ -616,6 +631,23 @@ function renderMain(){
 
   }else if(mv==='results'){
     var ev=evs[aEi];if(ev)h+=renderRes(ev);
+
+  }else if(mv==='crossrunning'){
+    h+='<div class="spinner"><div style="text-align:center"><div class="spin-ring" style="border-top-color:var(--acc)"></div><div style="font-size:16px;font-weight:700;margin-bottom:6px">Cross-comparing '+evs.length+' candidates...</div><div style="font-size:12px;color:var(--text-3)">Generating ranked recommendation report</div></div></div>';
+
+  }else if(mv==='crossresult'){
+    var xc=cXc[c.id];
+    if(xc){
+      h+='<div class="res" style="max-width:900px;margin:0 auto">';
+      h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M4 4l17 17"/></svg><h3 style="font-size:17px;font-weight:700;flex:1">Cross-Comparison Report</h3>'+(xc.saved?'<span style="font-size:11px;color:var(--pass);font-weight:500">Saved to Box</span>':'')+'</div>';
+      h+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:28px 32px;box-shadow:0 1px 4px rgba(0,0,0,.03)">';
+      h+=mdRender(xc.report);
+      h+='</div>';
+      h+='<div class="r-acts" style="margin-top:14px"><button class="wb" onclick="runCrossCompare()">Regenerate</button><div style="flex:1"></div><button class="wb" onclick="mv=\'results\';renderMain()">Back to Evals</button></div>';
+      h+='</div>';
+    } else {
+      h+='<div style="padding:40px;text-align:center;color:var(--text-4)">No cross-comparison yet. Click Cross-Compare to generate.</div>';
+    }
   }
 
   mp.innerHTML=h;
@@ -627,6 +659,50 @@ function startNewEval(){
   if(!selExp&&expF.length===1)selExp=expF[0].id;
   if(selExp){mv='wizard1';renderMain()}
   else{mv='wizard0';renderMain()}
+}
+
+function showCrossCompare(){
+  var c=cls[activeC];if(!c)return;
+  if(cXc[c.id]){mv='crossresult';renderMain();return}
+  runCrossCompare();
+}
+
+function runCrossCompare(){
+  var c=cls[activeC];if(!c||!c.folders.evaluated)return;
+  mv='crossrunning';renderMain();
+  // Fetch eval files from Evaluated Renewals
+  bGet('/folders/'+c.folders.evaluated+'/items?fields=name,type&limit=200').then(function(res){
+    var jsonFiles=res.entries.filter(function(e){return e.type==='file'&&e.name.match(/\.json$/i)});
+    if(jsonFiles.length<2){toast('Need at least 2 eval files to cross-compare','fail');mv='results';renderMain();return}
+    var items=jsonFiles.map(function(f){return{id:String(f.id),type:'file'}});
+    var prompt=selAgentConfig?'Cross-compare all candidate renewal evaluations. Rank the candidates and produce a recommendation report with executive summary, side-by-side table, risk analysis, and negotiation points.':XC_PROMPT;
+    var body={mode:'multiple_item_qa',items:items,prompt:prompt};
+    if(selAgentConfig)body.ai_agent=selAgentConfig;
+    console.log('[CrossCompare] Request:',JSON.stringify(body,null,2));
+    return bPost('/ai/ask',body);
+  }).then(function(res){
+    if(!res)return;
+    console.log('[CrossCompare] Response:',JSON.stringify(res,null,2).slice(0,2000));
+    var report=res.answer||'No report generated.';
+    cXc[c.id]={report:report,generated:new Date().toISOString(),saved:false};
+    mv='crossresult';renderMain();
+    // Auto-save to Cross Comparisons Reports
+    if(c.folders.crossCompare){
+      var ts=new Date().toISOString().slice(0,19).replace(/[T:]/g,'-');
+      var fn='CrossCompare_'+c.name.replace(/[^a-zA-Z0-9]/g,'_')+'_'+ts+'.md';
+      var blob=new Blob([report],{type:'text/markdown'});
+      var form=new FormData();
+      form.append('attributes',JSON.stringify({name:fn,parent:{id:c.folders.crossCompare}}));
+      form.append('file',blob,fn);
+      fetch(BUP+'/files/content',{method:'POST',headers:{Authorization:'Bearer '+TK},body:form}).then(function(r){
+        if(!r.ok)throw new Error(r.status);
+        cXc[c.id].saved=true;toast('Report saved: '+fn,'pass');renderMain();
+      }).catch(function(e){toast('Save failed: '+e.message,'fail')});
+    }
+  }).catch(function(e){
+    toast('Cross-compare failed: '+e.message,'fail');
+    mv='results';renderMain();
+  });
 }
 
 function toggleSec(key,hdEl){
