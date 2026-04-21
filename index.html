@@ -314,13 +314,13 @@ function bMkDir(n,pid){return bPost('/folders',{name:n,parent:{id:pid}})}
 function bUpFile(file,fid){var f=new FormData();f.append('attributes',JSON.stringify({name:file.name,parent:{id:fid}}));f.append('file',file,file.name);return fetch(BUP+'/files/content',{method:'POST',headers:{Authorization:'Bearer '+TK},body:f}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()})}
 
 /* ═══ STATE ═══ */
-var user=null,raId=null,agents=[],selAgent=null;
+var user=null,raId=null,agents=[],selAgent=null,selAgentConfig=null;
 var cls=[],activeC=null,cEvs={},aEi=0,mv='empty';
 var selExp=null,selCands=[],expF=[],candF=[];
 var collapsed=new Set(JSON.parse(localStorage.getItem('cw_c')||'[]'));
 var exSec={},libView='groups',lfId=null,lfNm='';
 var FD=[{n:'Expiring',c:'i'},{n:'Renewal Options',c:'i'},{n:'Evaluated Renewals',c:'o'},{n:'Cross Comparisons Reports',c:'o'}];
-var PROMPT='Compare the expiring policy against the candidate policy. Evaluate across all seven categories: Coverage Trigger & Time Architecture, Defense Cost Treatment, Limits Architecture, Exclusions, Endorsement Stack, Conditions, and Standard Boilerplate. Output the full evaluation matrix as a single valid JSON object. Every field you evaluate must appear — set diff:true with significance for differences, diff:false with significance:null for matches. Include the verdict, summary, interactions, and all section data. JSON only, no markdown, no prose outside the JSON.';
+var PROMPT='You are comparing an expiring insurance policy against a candidate renewal/quote. Analyze both documents and output ONLY a valid JSON object with this exact structure — no markdown, no commentary, no text outside the JSON:\n\n{"verdict":"worse|better|mixed","summary":"2-3 sentence summary of key changes","expiring":{"carrier":"...","policyNumber":"...","period":"...","premium":"..."},"candidate":{"carrier":"...","policyNumber":"...","period":"...","premium":"..."},"premiumDelta":"+$X or -$X","sections":[{"num":1,"name":"Coverage Trigger & Time Architecture","fields":[{"field":"Form Type","expiring":"...","candidate":"...","diff":true,"significance":"explanation or null"}]},{"num":2,"name":"Defense Cost Treatment","fields":[...]},{"num":3,"name":"Limits Architecture","fields":[...]},{"num":4,"name":"Exclusions","fields":[...]},{"num":5,"name":"Endorsement Stack","fields":[...]},{"num":6,"name":"Conditions","fields":[...]},{"num":7,"name":"Standard Boilerplate","fields":[...]}],"interactions":[{"name":"...","sections":"1,3","effect":"..."}]}\n\nEvery field must have diff:true or diff:false. significance is a string when diff is true, null when false. List ALL fields you can extract from both documents in each section. Output valid JSON only.';
 
 /* ═══ HELPERS ═══ */
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
@@ -331,7 +331,58 @@ function vc(v){return v==='worse'?'var(--fail)':v==='better'?'var(--pass)':v==='
 function vb(v){return v==='worse'?'var(--fail-soft)':v==='better'?'var(--pass-soft)':'var(--warn-soft)'}
 function vt(v){return v==='worse'?'tag-fail':v==='better'?'tag-pass':'tag-warn'}
 function toast(m,t){var c=document.getElementById('toasts'),d=document.createElement('div');d.className='toast'+(t?' '+t:'');d.textContent=m;c.appendChild(d);requestAnimationFrame(function(){d.classList.add('show')});setTimeout(function(){d.classList.remove('show');setTimeout(function(){d.remove()},400)},3000)}
-function norm(raw){var d;if(typeof raw==='string'){var m=raw.match(/\{[\s\S]*\}/);if(m)d=JSON.parse(m[0]);else throw new Error('No JSON')}else d=raw;if(d.sections)d.sections=d.sections.map(function(s){return Object.assign({},s,{fields:(s.fields||[]).map(function(f){var e=typeof f.expiring==='object'&&f.expiring?f.expiring.verbatim||JSON.stringify(f.expiring):f.expiring;var c=typeof f.candidate==='object'&&f.candidate?f.candidate.verbatim||JSON.stringify(f.candidate):f.candidate;var sg=f.significance;if(sg==null&&typeof f.expiring==='object'&&f.expiring)sg=f.expiring.significance;if(sg==null&&typeof f.candidate==='object'&&f.candidate)sg=f.candidate.significance;return{field:f.field,expiring:e,candidate:c,diff:f.diff!==undefined?f.diff:e!==c,significance:sg||null}})})});if(!Array.isArray(d.interactions))d.interactions=[];return d}
+function norm(raw){
+  var d;
+  if(typeof raw==='string'){var m=raw.match(/\{[\s\S]*\}/);if(m)d=JSON.parse(m[0]);else throw new Error('No JSON')}
+  else d=raw;
+
+  // Normalize verdict to worse/better/mixed
+  if(d.verdict){var vl=d.verdict.toLowerCase();if(vl.indexOf('caution')>=0||vl.indexOf('worse')>=0||vl.indexOf('decline')>=0||vl.indexOf('concern')>=0)d.verdict='worse';else if(vl.indexOf('better')>=0||vl.indexOf('improv')>=0||vl.indexOf('favor')>=0)d.verdict='better';else d.verdict='mixed'}
+
+  // Normalize sections: handle object-keyed format from Box AI
+  if(d.sections&&!Array.isArray(d.sections)){
+    var secObj=d.sections;var secArr=[];var num=1;
+    for(var secName in secObj){if(!secObj.hasOwnProperty(secName))continue;
+      var sec=secObj[secName];var fields=[];
+      var exp=sec.expiring||sec.Expiring||{};
+      var cand=sec.candidate||sec.Candidate||{};
+      var secDiff=sec.diff;var secSig=sec.significance||null;
+      if(typeof exp==='object'&&exp!==null&&typeof cand==='object'&&cand!==null){
+        // Both are objects with field keys — merge field names
+        var allKeys={};for(var k in exp)if(exp.hasOwnProperty(k)&&k!=='Notes'&&k!=='notes')allKeys[k]=true;
+        for(var k in cand)if(cand.hasOwnProperty(k)&&k!=='Notes'&&k!=='notes')allKeys[k]=true;
+        for(var fk in allKeys){if(!allKeys.hasOwnProperty(fk))continue;
+          var ev=exp[fk]!=null?String(exp[fk]):'';var cv=cand[fk]!=null?String(cand[fk]):'';
+          var fd=ev!==cv;
+          fields.push({field:fk,expiring:ev,candidate:cv,diff:fd,significance:fd?secSig:null})
+        }
+      } else {
+        // Flat comparison
+        fields.push({field:secName,expiring:typeof exp==='object'?JSON.stringify(exp):String(exp||''),candidate:typeof cand==='object'?JSON.stringify(cand):String(cand||''),diff:secDiff!==undefined?secDiff:true,significance:secSig})
+      }
+      secArr.push({num:num++,name:secName,fields:fields})
+    }
+    d.sections=secArr;
+  } else if(Array.isArray(d.sections)){
+    // Already an array — normalize fields
+    d.sections=d.sections.map(function(s){return Object.assign({},s,{fields:(s.fields||[]).map(function(f){
+      var e=typeof f.expiring==='object'&&f.expiring?f.expiring.verbatim||JSON.stringify(f.expiring):f.expiring;
+      var c=typeof f.candidate==='object'&&f.candidate?f.candidate.verbatim||JSON.stringify(f.candidate):f.candidate;
+      var sg=f.significance;if(sg==null&&typeof f.expiring==='object'&&f.expiring)sg=f.expiring.significance;
+      return{field:f.field,expiring:e,candidate:c,diff:f.diff!==undefined?f.diff:e!==c,significance:sg||null}})})})
+  }
+  if(!d.sections)d.sections=[];
+
+  // Normalize interactions: handle string array
+  if(Array.isArray(d.interactions)){
+    d.interactions=d.interactions.map(function(x,i){
+      if(typeof x==='string')return{name:'Interaction '+(i+1),sections:'',effect:x};
+      return x;
+    })
+  } else d.interactions=[];
+
+  return d;
+}
 
 /* ═══ CONNECT ═══ */
 function doConnect(){
@@ -359,9 +410,9 @@ function doConnect(){
     var err=document.getElementById('connErr');err.textContent=e.message;err.classList.remove('hidden');
   }).finally(function(){btn.disabled=false;btn.textContent='Connect to Box'});
 }
-function doDisconnect(){TK='';user=null;cls=[];agents=[];activeC=null;mv='empty';document.getElementById('connScr').classList.remove('hidden');document.getElementById('appLay').classList.add('hidden');document.getElementById('topUser').textContent='';document.getElementById('topDc').classList.add('hidden')}
+function doDisconnect(){TK='';user=null;cls=[];agents=[];selAgent=null;selAgentConfig=null;activeC=null;mv='empty';document.getElementById('connScr').classList.remove('hidden');document.getElementById('appLay').classList.add('hidden');document.getElementById('topUser').textContent='';document.getElementById('topDc').classList.add('hidden')}
 function loadCls(){return bGet('/folders/'+raId+'/items?fields=name,type&limit=200').then(function(it){var folders=it.entries.filter(function(e){return e.type==='folder'});cls=[];var chain=Promise.resolve();folders.forEach(function(c){chain=chain.then(function(){return bGet('/folders/'+c.id+'/items?fields=name,type&limit=200').then(function(s){var dirs=s.entries.filter(function(e){return e.type==='folder'});function find(n){var nl=n.toLowerCase();var x=dirs.find(function(e){return e.name.toLowerCase()===nl});return x?x.id:null}cls.push({id:c.id,name:c.name,folders:{expiring:find('Expiring'),renewalOptions:find('Renewal Options'),evaluated:find('Evaluated Renewals'),crossCompare:find('Cross Comparisons Reports')},counts:{}})})})});return chain.then(function(){document.getElementById('stTxt').textContent='Connected \u00b7 '+cls.length+' client'+(cls.length!==1?'s':'');var cchain=Promise.resolve();cls.forEach(function(cl){['expiring','renewalOptions','evaluated','crossCompare'].forEach(function(key){var fid=cl.folders[key];if(!fid)return;cchain=cchain.then(function(){return bGet('/folders/'+fid+'/items?limit=1&fields=name').then(function(r){cl.counts[key]=r.total_count||0}).catch(function(){cl.counts[key]=0})})})});return cchain})})}
-function renderAgent(){var el=document.getElementById('agBox'),sel=document.getElementById('agSel');if(!agents.length){el.classList.add('hidden');return}el.classList.remove('hidden');var h='<option value="">Default (raw prompt)</option>';agents.forEach(function(a){h+='<option value="'+a.id+'"'+(selAgent===a.id?' selected':'')+'>'+esc(a.name)+'</option>'});sel.innerHTML=h;sel.onchange=function(){selAgent=sel.value||null}}
+function renderAgent(){var el=document.getElementById('agBox'),sel=document.getElementById('agSel');if(!agents.length){el.classList.add('hidden');return}el.classList.remove('hidden');var h='<option value="">Default (raw prompt)</option>';agents.forEach(function(a){h+='<option value="'+a.id+'"'+(selAgent===a.id?' selected':'')+'>'+esc(a.name)+'</option>'});sel.innerHTML=h;sel.onchange=function(){var aid=sel.value||null;selAgent=aid;selAgentConfig=null;if(aid){bGet('/ai_agents/'+aid+'?fields=ask').then(function(full){if(full.ask)selAgentConfig=full.ask;toast('Agent loaded','pass')}).catch(function(e){toast('Agent load failed: '+e.message,'fail');selAgent=null;selAgentConfig=null;sel.value=''})}};if(selAgent){bGet('/ai_agents/'+selAgent+'?fields=ask').then(function(full){if(full.ask)selAgentConfig=full.ask}).catch(function(){selAgent=null;selAgentConfig=null})}}
 function refreshLib(){loadCls().then(function(){renderLib()})}
 
 /* ═══ LIBRARY PANEL ═══ */
@@ -419,8 +470,29 @@ function closePv(){document.getElementById('pvOv').classList.add('hidden');docum
 function selCl(idx){activeC=idx;mv='wizard0';selExp=null;selCands=[];var c=cls[idx];if(!cEvs[c.id])cEvs[c.id]=[];aEi=0;exSec={};
   Promise.all([
     c.folders.expiring?bGet('/folders/'+c.folders.expiring+'/items?fields=name,type,modified_at&limit=200'):Promise.resolve({entries:[]}),
-    c.folders.renewalOptions?bGet('/folders/'+c.folders.renewalOptions+'/items?fields=name,type,modified_at&limit=200'):Promise.resolve({entries:[]})
-  ]).then(function(r){expF=r[0].entries.filter(function(e){return e.type==='file'});candF=r[1].entries.filter(function(e){return e.type==='file'})}).catch(function(){expF=[];candF=[]}).then(function(){renderMain()})}
+    c.folders.renewalOptions?bGet('/folders/'+c.folders.renewalOptions+'/items?fields=name,type,modified_at&limit=200'):Promise.resolve({entries:[]}),
+    c.folders.evaluated?bGet('/folders/'+c.folders.evaluated+'/items?fields=name,type,modified_at&limit=200'):Promise.resolve({entries:[]})
+  ]).then(function(r){
+    expF=r[0].entries.filter(function(e){return e.type==='file'});
+    candF=r[1].entries.filter(function(e){return e.type==='file'});
+    // Load saved evals from Evaluated Renewals folder
+    var evalFiles=r[2].entries.filter(function(e){return e.type==='file'&&e.name.match(/\.json$/i)});
+    if(evalFiles.length&&!cEvs[c.id].length){
+      var loadChain=Promise.resolve();
+      evalFiles.forEach(function(ef){
+        loadChain=loadChain.then(function(){
+          return fetch(BOX+'/files/'+ef.id+'/content',{headers:{Authorization:'Bearer '+TK}}).then(function(r){return r.json()}).then(function(data){
+            var evName=ef.name.replace(/^Eval_/,'').replace(/_\d{4}-\d{2}-\d{2}\.json$/,'').replace(/_/g,' ');
+            cEvs[c.id].push({name:evName,data:data,saved:true});
+          }).catch(function(){});
+        });
+      });
+      return loadChain;
+    }
+  }).catch(function(){expF=[];candF=[]}).then(function(){
+    if(cEvs[c.id].length){mv='results';aEi=0}
+    renderMain();
+  })}
 function refreshFiles(){if(activeC===null)return;var c=cls[activeC];Promise.all([
     c.folders.expiring?bGet('/folders/'+c.folders.expiring+'/items?fields=name,type,modified_at&limit=200'):Promise.resolve({entries:[]}),
     c.folders.renewalOptions?bGet('/folders/'+c.folders.renewalOptions+'/items?fields=name,type,modified_at&limit=200'):Promise.resolve({entries:[]})
@@ -455,7 +527,7 @@ function renderMain(){
   if(activeC===null||activeC>=cls.length){mp.innerHTML='<div class="mn-empty">Select a client from the sidebar</div>';return}
   var c=cls[activeC],evs=cEvs[c.id]||[];
   var h='<div class="cl-hdr"><div><h2>'+esc(c.name)+'</h2><div class="cl-hdr-meta">'+expF.length+' expiring \u00b7 '+candF.length+' candidate'+(candF.length!==1?'s':'')+'</div></div><div class="cl-hdr-fill"></div>';
-  if(evs.length){h+='<div class="ev-tabs">';evs.forEach(function(ev,i){h+='<button class="ev-tab'+(mv==='results'&&aEi===i?' on':'')+'" onclick="showEv('+i+')"><div class="ev-dot" style="background:'+vc(ev.data.verdict)+'"></div>'+esc(ev.name.length>18?ev.name.slice(0,18)+'\u2026':ev.name)+'</button>'});h+='</div>'}
+  if(evs.length){h+='<div class="ev-tabs">';evs.forEach(function(ev,i){h+='<button class="ev-tab'+(mv==='results'&&aEi===i?' on':'')+'" onclick="showEv('+i+')"><div class="ev-dot" style="background:'+vc(ev.data.verdict)+'"></div>'+esc(ev.name.length>18?ev.name.slice(0,18)+'\u2026':ev.name)+'</button>'});h+='<button class="ev-tab" onclick="mv=\'wizard1\';selCands=[];renderMain()" style="border-style:dashed;color:var(--pri)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Evaluate</button>';h+='</div>'}
   h+='</div>';
 
   var eyeSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
@@ -493,21 +565,40 @@ function showEv(i){aEi=i;mv='results';renderMain()}
 function runEvs(){
   mv='running';renderMain();var c=cls[activeC],evs=cEvs[c.id]||[];
   var chain=Promise.resolve();
+  var newEvs=[];
   selCands.forEach(function(cid,i){
     chain=chain.then(function(){
       var cf=candF.find(function(f){return f.id===cid});
       var prog=document.getElementById('runProg');if(prog)prog.textContent='Evaluating '+(i+1)+'/'+selCands.length+': '+(cf?cf.name:cid);
       var body={mode:'multiple_item_qa',items:[{id:selExp,type:'file'},{id:cid,type:'file'}],prompt:PROMPT};
-      if(selAgent)body.ai_agent={type:'ai_agent_id',id:selAgent};
+      if(selAgentConfig)body.ai_agent=selAgentConfig;
       return bPost('/ai/ask',body).then(function(res){
-        var ed;try{ed=norm(res.answer)}catch(pe){ed={raw:res.answer,verdict:'unknown',summary:'JSON parse failed.',sections:[],interactions:[]}}
-        evs.push({name:(cf?cf.name.replace('.pdf',''):'Candidate '+(i+1)),data:ed,cid:cid});
+        var ed;try{ed=norm(res.answer)}catch(pe){ed={raw:res.answer,verdict:'unknown',summary:'Parse failed.',sections:[],interactions:[]}}
+        var ev={name:(cf?cf.name.replace('.pdf',''):'Candidate '+(i+1)),data:ed,cid:cid};
+        evs.push(ev);newEvs.push(ev);
       }).catch(function(e){
-        evs.push({name:(cf?cf.name.replace('.pdf',''):'Candidate '+(i+1)),data:{error:e.message,verdict:'error',summary:'Failed: '+e.message,sections:[],interactions:[]},cid:cid});
+        var ev={name:(cf?cf.name.replace('.pdf',''):'Candidate '+(i+1)),data:{error:e.message,verdict:'error',summary:'Failed: '+e.message,sections:[],interactions:[]},cid:cid};
+        evs.push(ev);newEvs.push(ev);
       });
     });
   });
-  chain.then(function(){cEvs[c.id]=evs;aEi=Math.max(0,evs.length-selCands.length);mv='results';renderMain()});
+  chain.then(function(){
+    cEvs[c.id]=evs;aEi=Math.max(0,evs.length-selCands.length);mv='results';renderMain();
+    // Auto-save each new eval to Box
+    if(c.folders.evaluated){newEvs.forEach(function(ev){autoSaveEv(c.folders.evaluated,ev)})}
+  });
+}
+
+function autoSaveEv(folderId,ev){
+  var fn='Eval_'+ev.name.replace(/[^a-zA-Z0-9]/g,'_')+'_'+new Date().toISOString().slice(0,10)+'.json';
+  var blob=new Blob([JSON.stringify(ev.data,null,2)],{type:'application/json'});
+  var form=new FormData();
+  form.append('attributes',JSON.stringify({name:fn,parent:{id:folderId}}));
+  form.append('file',blob,fn);
+  fetch(BUP+'/files/content',{method:'POST',headers:{Authorization:'Bearer '+TK},body:form}).then(function(r){
+    if(!r.ok)throw new Error(r.status);
+    ev.saved=true;ev.saving=false;toast('Saved: '+fn,'pass');
+  }).catch(function(e){toast('Auto-save failed: '+e.message,'fail')});
 }
 
 /* ═══ RENDER RESULTS ═══ */
@@ -548,7 +639,7 @@ function renderRes(ev){
     if(io){h+='<div class="ix-bd">';ix.forEach(function(x){h+='<div class="ix-row"><span style="font-family:IBM Plex Mono,monospace;font-size:10px;color:var(--pri);background:var(--pri-soft);padding:2px 7px;border-radius:4px;flex-shrink:0;margin-top:2px">'+esc(x.sections)+'</span><div><div style="font-size:12px;font-weight:600;margin-bottom:2px">'+esc(x.name)+'</div><div style="font-size:11px;color:var(--text-3);line-height:1.5">'+esc(x.effect)+'</div></div></div>'});h+='</div>'}
     h+='</div>'}
 
-  h+='<div class="r-acts"><button class="wb p" onclick="saveEv('+aEi+')"'+(ev.saved?' disabled':'')+'>'+( ev.saved?'Saved to Box':ev.saving?'Saving...':'Save to Evaluated Renewals')+'</button><button class="wb" onclick="mv=\'wizard1\';selCands=[];renderMain()">+ Add Candidate</button><button class="wb" onclick="mv=\'wizard0\';selExp=null;selCands=[];renderMain()">New Eval</button></div></div>';
+  h+='<div class="r-acts">'+(ev.saved?'<span style="font-size:11px;color:var(--pass);font-weight:500">Saved to Box</span>':'<button class="wb" onclick="saveEv('+aEi+')">Save to Box</button>')+'<div style="flex:1"></div><button class="wb" onclick="mv=\'wizard0\';selExp=null;selCands=[];renderMain()">New Comparison</button></div></div>';
   return h;
 }
 
