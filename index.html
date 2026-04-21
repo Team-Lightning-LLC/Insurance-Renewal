@@ -159,7 +159,7 @@
     .fr { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:8px; margin-bottom:5px; cursor:pointer; border:1.5px solid var(--border); transition:all .12s ease-out; }
     .fr:hover { border-color:var(--text-4); }
     .fr.sel { background:var(--pri-soft); border-color:var(--pri); }
-    .fr-nm { flex:1; font-size:13px; font-weight:500; }
+    .fr-nm { flex:1; font-size:13px; font-weight:500; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .fr.sel .fr-nm { font-weight:600; }
     .fr-eye { background:none; border:none; color:var(--text-4); cursor:pointer; padding:4px; border-radius:4px; display:flex; opacity:.5; flex-shrink:0; }
     .fr-eye:hover { opacity:1; color:var(--pri); background:var(--pri-soft); }
@@ -360,7 +360,7 @@ function doConnect(){
   }).finally(function(){btn.disabled=false;btn.textContent='Connect to Box'});
 }
 function doDisconnect(){TK='';user=null;cls=[];agents=[];activeC=null;mv='empty';document.getElementById('connScr').classList.remove('hidden');document.getElementById('appLay').classList.add('hidden');document.getElementById('topUser').textContent='';document.getElementById('topDc').classList.add('hidden')}
-function loadCls(){return bGet('/folders/'+raId+'/items?fields=name,type&limit=200').then(function(it){var folders=it.entries.filter(function(e){return e.type==='folder'});cls=[];var chain=Promise.resolve();folders.forEach(function(c){chain=chain.then(function(){return bGet('/folders/'+c.id+'/items?fields=name,type&limit=200').then(function(s){var dirs=s.entries.filter(function(e){return e.type==='folder'});function find(n){var nl=n.toLowerCase();var x=dirs.find(function(e){return e.name.toLowerCase()===nl});return x?x.id:null}cls.push({id:c.id,name:c.name,folders:{expiring:find('Expiring'),renewalOptions:find('Renewal Options'),evaluated:find('Evaluated Renewals'),crossCompare:find('Cross Comparisons Reports')}})})})});return chain.then(function(){document.getElementById('stTxt').textContent='Connected \u00b7 '+cls.length+' client'+(cls.length!==1?'s':'')})})}
+function loadCls(){return bGet('/folders/'+raId+'/items?fields=name,type&limit=200').then(function(it){var folders=it.entries.filter(function(e){return e.type==='folder'});cls=[];var chain=Promise.resolve();folders.forEach(function(c){chain=chain.then(function(){return bGet('/folders/'+c.id+'/items?fields=name,type&limit=200').then(function(s){var dirs=s.entries.filter(function(e){return e.type==='folder'});function find(n){var nl=n.toLowerCase();var x=dirs.find(function(e){return e.name.toLowerCase()===nl});return x?x.id:null}cls.push({id:c.id,name:c.name,folders:{expiring:find('Expiring'),renewalOptions:find('Renewal Options'),evaluated:find('Evaluated Renewals'),crossCompare:find('Cross Comparisons Reports')},counts:{}})})})});return chain.then(function(){document.getElementById('stTxt').textContent='Connected \u00b7 '+cls.length+' client'+(cls.length!==1?'s':'');var cchain=Promise.resolve();cls.forEach(function(cl){['expiring','renewalOptions','evaluated','crossCompare'].forEach(function(key){var fid=cl.folders[key];if(!fid)return;cchain=cchain.then(function(){return bGet('/folders/'+fid+'/items?limit=1&fields=name').then(function(r){cl.counts[key]=r.total_count||0}).catch(function(){cl.counts[key]=0})})})});return cchain})})}
 function renderAgent(){var el=document.getElementById('agBox'),sel=document.getElementById('agSel');if(!agents.length){el.classList.add('hidden');return}el.classList.remove('hidden');var h='<option value="">Default (raw prompt)</option>';agents.forEach(function(a){h+='<option value="'+a.id+'"'+(selAgent===a.id?' selected':'')+'>'+esc(a.name)+'</option>'});sel.innerHTML=h;sel.onchange=function(){selAgent=sel.value||null}}
 function refreshLib(){loadCls().then(function(){renderLib()})}
 
@@ -378,12 +378,12 @@ function renderLib(){
     h+='<div class="sg-bd'+(shut?' shut':'')+'" style="max-height:2000px">';
     h+='<div style="padding:4px 14px 6px"><button class="sg-ws" data-ci="'+ci+'"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>Open Workspace</button></div>';
     h+='<div class="sg-sub">Input</div>';
-    FD.forEach(function(fd){if(fd.c!=='i')return;var fid=fd.n==='Expiring'?c.folders.expiring:c.folders.renewalOptions;
-      if(fid){h+='<div class="sg-it" onclick="openLf(\''+fid+'\',\''+escA(c.name+' / '+fd.n)+'\')"><div class="sg-ico inp">'+fi+'</div><div style="flex:1"><div class="sg-nm">'+esc(fd.n)+'</div></div></div>'}
+    FD.forEach(function(fd){if(fd.c!=='i')return;var fkey=fd.n==='Expiring'?'expiring':'renewalOptions';var fid=c.folders[fkey];var cnt=c.counts&&c.counts[fkey]!=null?c.counts[fkey]:null;var cntHtml=cnt!=null?'<span style="font-size:10px;color:var(--sbt3);font-family:IBM Plex Mono,monospace;margin-left:auto;flex-shrink:0">'+cnt+'</span>':'';
+      if(fid){h+='<div class="sg-it" onclick="openLf(\''+fid+'\',\''+escA(c.name+' / '+fd.n)+'\')"><div class="sg-ico inp">'+fi+'</div><div style="flex:1;display:flex;align-items:center;gap:6px"><div class="sg-nm">'+esc(fd.n)+'</div>'+cntHtml+'</div></div>'}
       else{h+='<div class="sg-it"><div class="sg-ico inp" style="opacity:.4">'+fi+'</div><div style="flex:1"><div class="sg-nm" style="opacity:.5">'+esc(fd.n)+'</div><div class="sg-meta">not found</div></div><button class="sg-mk" data-cid="'+c.id+'" data-fn="'+escA(fd.n)+'">+ Create</button></div>'}});
     h+='<div class="sg-sub">Output</div>';
-    FD.forEach(function(fd){if(fd.c!=='o')return;var fid=fd.n==='Evaluated Renewals'?c.folders.evaluated:c.folders.crossCompare;
-      if(fid){h+='<div class="sg-it" onclick="openLf(\''+fid+'\',\''+escA(c.name+' / '+fd.n)+'\')"><div class="sg-ico out">'+fi+'</div><div style="flex:1"><div class="sg-nm">'+esc(fd.n)+'</div></div></div>'}
+    FD.forEach(function(fd){if(fd.c!=='o')return;var fkey=fd.n==='Evaluated Renewals'?'evaluated':'crossCompare';var fid=c.folders[fkey];var cnt=c.counts&&c.counts[fkey]!=null?c.counts[fkey]:null;var cntHtml=cnt!=null?'<span style="font-size:10px;color:var(--sbt3);font-family:IBM Plex Mono,monospace;margin-left:auto;flex-shrink:0">'+cnt+'</span>':'';
+      if(fid){h+='<div class="sg-it" onclick="openLf(\''+fid+'\',\''+escA(c.name+' / '+fd.n)+'\')"><div class="sg-ico out">'+fi+'</div><div style="flex:1;display:flex;align-items:center;gap:6px"><div class="sg-nm">'+esc(fd.n)+'</div>'+cntHtml+'</div></div>'}
       else{h+='<div class="sg-it"><div class="sg-ico out" style="opacity:.4">'+fi+'</div><div style="flex:1"><div class="sg-nm" style="opacity:.5">'+esc(fd.n)+'</div><div class="sg-meta">not found</div></div><button class="sg-mk" data-cid="'+c.id+'" data-fn="'+escA(fd.n)+'">+ Create</button></div>'}});
     h+='</div></div>'}
   el.innerHTML=h;
