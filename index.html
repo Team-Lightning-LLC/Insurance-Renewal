@@ -8,7 +8,7 @@
 <style>
 :root{--bg:#F7F6F3;--surface:#fff;--surface-hover:#F3F1ED;--surface-active:#EFEEE9;--text:#2B2D2E;--text-2:#4A4E54;--text-3:#6B7280;--text-4:#A0A4AB;--border:#E5E3DE;--border-soft:#EFEEE9;--pri:#3D5A80;--pri-soft:rgba(61,90,128,.06);--pri-deep:#2E4A6E;--pri-border:rgba(61,90,128,.14);--acc:#7FB8A4;--acc-deep:#6BA593;--pass:#5BAD7A;--pass-soft:#EDF7F0;--fail:#C75B5B;--fail-soft:#FDF0F0;--warn:#D4A84B;--warn-soft:#FDF6E8;--ease:cubic-bezier(.22,1,.36,1);--fast:150ms;--sb-bg:#2B2D2E;--sb-surface:rgba(255,255,255,.04);--sb-hover:rgba(255,255,255,.06);--sb-text:#E5E3DE;--sb-text-2:#A0A4AB;--sb-text-3:#6B7280;--sb-border:rgba(255,255,255,.07);--sb-active:rgba(61,90,128,.2)}
 *{box-sizing:border-box;margin:0;padding:0}html,body{height:100%}
-body{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14px;line-height:1.6;background:var(--bg);color:var(--text);display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+body{font-family:'Plus Jakarta Sans',sans-serif;font-weight:400;font-size:14px;line-height:1.6;background:var(--bg);color:var(--text);display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:4px}::selection{background:var(--pri);color:#fff}.hidden{display:none!important}
 @keyframes spin{100%{transform:rotate(360deg)}}@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
@@ -148,7 +148,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14px;l
       <div class="uq hidden" id="uQueue"><div class="uq-h"><span>Activity</span><button class="ga-btn" onclick="clearQ()"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div id="qList"></div></div>
       <div class="lib-status"><div class="lib-dot"></div><span class="lib-st" id="stTxt">Connected</span></div>
     </div>
-    <div class="main" id="mainP"><div class="main-empty" id="mainE">Select a client from the sidebar</div></div>
+    <div class="main" id="mainP"></div>
   </div>
 </div>
 
@@ -178,7 +178,9 @@ try{const ag=await bGet('/ai_agents');agents=(ag.entries||[]).filter(a=>a.access
 document.getElementById('connScreen').classList.add('hidden');const al=document.getElementById('appLayout');al.classList.remove('hidden');al.style.display='flex';document.getElementById('topUser').textContent=user.name||'';document.getElementById('topDc').classList.remove('hidden');renderAg();renderLib()
 }catch(e){const err=document.getElementById('connErr');err.textContent=e.message;err.classList.remove('hidden')}b.disabled=false;b.textContent='Connect to Box'}
 
-function doDisconnect(){TK='';user=null;cls=[];agents=[];activeC=null;mv='empty';document.getElementById('connScreen').classList.remove('hidden');document.getElementById('appLayout').classList.add('hidden');document.getElementById('topUser').textContent='';document.getElementById('topDc').classList.add('hidden')}
+function doDisconnect(){TK='';user=null;cls=[];agents=[];activeC=null;mv='empty';
+document.getElementById('mainP').innerHTML='<div class="main-empty">Select a client from the sidebar</div>';
+document.getElementById('connScreen').classList.remove('hidden');document.getElementById('appLayout').classList.add('hidden');document.getElementById('topUser').textContent='';document.getElementById('topDc').classList.add('hidden')}
 
 async function loadCls(){const it=await bGet('/folders/'+raId+'/items?fields=name,type&limit=200');cls=[];for(const c of it.entries.filter(e=>e.type==='folder')){const s=await bGet('/folders/'+c.id+'/items?fields=name,type&limit=200');const dirs=s.entries.filter(e=>e.type==='folder');const f=n=>{const nl=n.toLowerCase().trim();const x=dirs.find(e=>e.name.toLowerCase().trim()===nl);return x?x.id:null};cls.push({id:c.id,name:c.name,folders:{expiring:f('Expiring'),renewalOptions:f('Renewal Options'),evaluated:f('Evaluated Renewals'),crossCompare:f('Cross Comparisons Reports')}})}document.getElementById('stTxt').textContent='Connected · '+cls.length+' client'+(cls.length!==1?'s':'')}
 
@@ -241,7 +243,9 @@ async function mkFolder(clientBoxId,folderName){try{await bMkDir(folderName,clie
 async function selCl(idx){activeC=idx;mv='wizard0';selExp=null;selCands=[];const c=cls[idx];if(!cEvs[c.id])cEvs[c.id]=[];aEi=0;exSec={};
 try{const[e,cd]=await Promise.all([c.folders.expiring?bGet('/folders/'+c.folders.expiring+'/items?fields=name,type,modified_at&limit=200'):{entries:[]},c.folders.renewalOptions?bGet('/folders/'+c.folders.renewalOptions+'/items?fields=name,type,modified_at&limit=200'):{entries:[]}]);expF=e.entries.filter(e=>e.type==='file');candF=cd.entries.filter(e=>e.type==='file')}catch(e){expF=[];candF=[]}renderMain()}
 
-function renderMain(){const mp=document.getElementById('mainP'),me=document.getElementById('mainE');if(activeC===null){me.classList.remove('hidden');mp.innerHTML='<div class="main-empty">Select a client from the sidebar</div>';return}me.classList.add('hidden');const c=cls[activeC];const evs=cEvs[c.id]||[];let h='<div class="cl-hdr"><div><h2>'+esc(c.name)+'</h2><div class="cl-hdr-m">'+expF.length+' expiring · '+candF.length+' candidate'+(candF.length!==1?'s':'')+'</div></div><div class="cl-hdr-sp"></div>';
+function renderMain(){var mp=document.getElementById('mainP');if(!mp)return;
+if(activeC===null||activeC>=cls.length){mp.innerHTML='<div class="main-empty">Select a client from the sidebar</div>';return}
+var c=cls[activeC];var evs=cEvs[c.id]||[];var h='<div class="cl-hdr"><div><h2>'+esc(c.name)+'</h2><div class="cl-hdr-m">'+expF.length+' expiring · '+candF.length+' candidate'+(candF.length!==1?'s':'')+'</div></div><div class="cl-hdr-sp"></div>';
 if(evs.length){h+='<div class="ev-tabs">';evs.forEach((ev,i)=>{h+='<button class="ev-tab'+(mv==='results'&&aEi===i?' active':'')+'" onclick="showEv('+i+')"><div class="ev-dot" style="background:'+vc(ev.data.verdict)+'"></div>'+esc(ev.name.length>18?ev.name.slice(0,18)+'…':ev.name)+'</button>'});h+='</div>'}
 h+='</div>';
 
@@ -290,6 +294,10 @@ async function saveEv(idx){const c=cls[activeC];const evs=cEvs[c.id];const ev=ev
 try{const blob=new Blob([JSON.stringify(ev.data,null,2)],{type:'application/json'});const form=new FormData();form.append('attributes',JSON.stringify({name:fn,parent:{id:c.folders.evaluated}}));form.append('file',blob,fn);const r=await fetch(BUP+'/files/content',{method:'POST',headers:{Authorization:'Bearer '+TK},body:form});if(!r.ok)throw new Error(r.status);ev.saving=false;ev.saved=true;toast('Saved to Box','pass')}catch(e){ev.saving=false;toast('Save failed: '+e.message,'fail')}renderMain()}
 
 function toast(msg,type){const c=document.getElementById('toasts'),t=document.createElement('div');t.className='toast toast-'+(type||'');t.innerHTML='<span>'+msg+'</span>';c.appendChild(t);requestAnimationFrame(()=>t.classList.add('show'));setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),400)},3000)}
+
+// Init
+renderMain();
+
 </script>
 </body>
 </html>
