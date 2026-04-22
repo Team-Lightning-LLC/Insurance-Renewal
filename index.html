@@ -503,7 +503,22 @@ function delBoxFile(fileId,fileName){
   if(!confirm('Delete "'+fileName+'" from Box?'))return;
   fetch(BOX+'/files/'+fileId,{method:'DELETE',headers:{Authorization:'Bearer '+TK}}).then(function(r){
     if(!r.ok&&r.status!==204)throw new Error(r.status);
-    toast('Deleted: '+fileName,'pass');renderDocs();
+    toast('Deleted: '+fileName,'pass');
+    renderDocs();
+    // Sync workspace if open — remove from file lists and evals
+    if(activeCid){
+      expF=expF.filter(function(f){return f.id!==fileId});
+      candF=candF.filter(function(f){return f.id!==fileId});
+      if(selExp===fileId)selExp=expF.length===1?expF[0].id:null;
+      selCands=selCands.filter(function(id){return id!==fileId});
+      // Remove eval if it was an eval JSON
+      var c=cls[activeC];if(c&&cEvs[c.id]){
+        var before=cEvs[c.id].length;
+        cEvs[c.id]=cEvs[c.id].filter(function(ev){return ev.fileId!==fileId});
+        if(cEvs[c.id].length!==before){aEi=Math.min(aEi,Math.max(0,cEvs[c.id].length-1))}
+      }
+      renderMain();
+    }
   }).catch(function(e){toast('Delete failed: '+e.message,'fail')});
 }
 function trigUp(){var fi=document.getElementById('fIn');fi.onchange=function(ev){var fs=Array.from(ev.target.files);if(!fs.length)return;document.getElementById('uq').classList.remove('hidden');var chain=Promise.resolve();fs.forEach(function(f){var q=Date.now()+'_'+Math.random().toString(36).substr(2,4);addQ(q,f.name);chain=chain.then(function(){updQ(q,'Uploading...','p');return bUpFile(f,lfId).then(function(){updQ(q,'Done','d')}).catch(function(e){updQ(q,e.message,'e')})})});chain.then(function(){fi.value='';renderDocs();toast('Uploaded '+fs.length+' file'+(fs.length>1?'s':''),'pass')})};fi.click()}
@@ -543,7 +558,7 @@ function selCl(idx){var c=cls[idx];activeCid=c.id;activeC=idx;mv='loading';selEx
           return fetch(BOX+'/files/'+ef.id+'/content',{headers:{Authorization:'Bearer '+TK}}).then(function(r){return isMd?r.text():r.json()}).then(function(content){
             var evName=ef.name.replace(/^Eval_/,'').replace(/_\d{4}-\d{2}-\d{2}[-T][\d-]+\.(json|md)$/i,'').replace(/_/g,' ');
             var data=isMd?{markdown:content}:content;
-            cEvs[c.id].push({name:evName,data:data,saved:true});
+            cEvs[c.id].push({name:evName,data:data,saved:true,fileId:ef.id});
           }).catch(function(){});
         });
       });
